@@ -24,7 +24,20 @@ The server is a simple Node.js application that uses the `http-proxy` library. I
     ```bash
     npm start
     ```
-    The server will start listening on port 8080.
+    By default, the server listens on `127.0.0.1:8080` and forwards traffic to `http://localhost:3000`.
+
+2.  (Optional) Configure runtime settings with environment variables:
+    - `TARGET_URL` (default: `http://localhost:3000`)
+    - `HOST` (default: `127.0.0.1`)
+    - `PORT` (default: `8080`)
+
+    PowerShell example:
+    ```powershell
+    $env:TARGET_URL = "https://real.antigravity.backend.com"
+    $env:HOST = "127.0.0.1"
+    $env:PORT = "8080"
+    npm start
+    ```
 
 ## Configuring the Antigravity App
 
@@ -55,11 +68,6 @@ If you cannot directly configure the Antigravity application to use a proxy, you
 
 **Note:** Remember to disable the system-wide proxy settings when you are done testing, as it will affect all your internet traffic.
 
-**Important:** You will also need to update the `target` URL in `server.js` to point to the real Antigravity backend. The current placeholder is `http://localhost:3000`.
+**Important:** Set `TARGET_URL` to the real Antigravity backend before using this proxy with the official app.
 
-```javascript
-// server.js
-proxy.web(req, res, { target: 'https://real.antigravity.backend.com' }); // Change this URL
-```
-
-Once configured, you will see the requests and responses from the Antigravity app logged in your console.
+Once configured, you will see requests and responses logged in the console. Sensitive headers such as `Authorization` and `Cookie` are redacted.
