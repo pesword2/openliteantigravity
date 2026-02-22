@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Open-Antigravity MVP Skeleton</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>Open-Antigravity</h1>
+      <p>MVP Skeleton</p>
+    </header>
+    <main class="layout">
+      <section class="panel manager">
+        <h2>Manager View</h2>
+        <form id="task-form">
+          <label for="task-prompt">Create Task</label>
+          <textarea
+            id="task-prompt"
+            name="prompt"
+            rows="4"
+            placeholder="Implement a login API with tests"
+            required
+          ></textarea>
+          <button type="submit">Queue Task</button>
+        </form>
+        <pre id="status" aria-live="polite">Loading status...</pre>
+      </section>
+      <section class="panel editor">
+        <h2>Editor View</h2>
+        <p>This placeholder represents the future VSCodium editor integration.</p>
+        <h3>Models</h3>
+        <ul id="models"></ul>
+        <h3>Queued Tasks</h3>
+        <ul id="tasks"></ul>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

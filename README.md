@@ -117,12 +117,14 @@ Here is a high-level overview of the key phases:
 
 ## 🛠️ Getting Started (Development)
 
-Interested in building the future of software development with us? Here’s how you can get the project running locally.
+The repository now includes a runnable MVP skeleton composed of:
+- `services/orchestrator` (minimal API gateway + task/model/workspace stubs)
+- `services/web` (minimal manager/editor UI that calls the orchestrator)
+- `mitmserver` (request interception tool used independently)
 
 **Prerequisites:**
-- Docker and Docker Compose
-- Node.js (v20+)
-- Python (v3.11+)
+- Docker and Docker Compose plugin (`docker compose`)
+- Node.js v20+ (only needed if you run services without Docker)
 
 **Installation:**
 
@@ -136,13 +138,22 @@ Interested in building the future of software development with us? Here’s how 
     ```bash
     cp .env.example .env
     ```
-    *Fill in your API keys and other configuration in the `.env` file.*
 
-3.  **Launch the environment:**
+3.  **Launch the MVP skeleton:**
     ```bash
-    docker-compose up --build
+    docker compose up --build
     ```
-    This will build all the services and launch the Open-Antigravity platform. You can access it at `http://localhost:3000`.
+
+4.  **Open the services:**
+    - Web UI: `http://localhost:3000`
+    - Orchestrator API health: `http://localhost:4000/health`
+
+5.  **Run MITM proxy separately (optional):**
+    ```bash
+    cd mitmserver
+    npm ci
+    npm start
+    ```
 
 ## 🙌 How to Contribute
 

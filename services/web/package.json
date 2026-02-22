@@ -1,0 +1,11 @@
+{
+  "name": "open-antigravity-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minimal web UI scaffold for Open-Antigravity.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}

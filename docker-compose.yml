@@ -1,0 +1,28 @@
+services:
+  orchestrator:
+    image: node:22-alpine
+    working_dir: /app
+    command: node server.js
+    environment:
+      HOST: ${ORCHESTRATOR_HOST:-0.0.0.0}
+      PORT: ${ORCHESTRATOR_PORT:-4000}
+      DEFAULT_MODELS: ${DEFAULT_MODELS:-gpt-4.1-mini,claude-sonnet,gemini-2.0-flash}
+    volumes:
+      - ./services/orchestrator:/app:ro
+    ports:
+      - "${ORCHESTRATOR_PORT:-4000}:4000"
+
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: node server.js
+    depends_on:
+      - orchestrator
+    environment:
+      HOST: ${WEB_HOST:-0.0.0.0}
+      PORT: ${WEB_PORT:-3000}
+      ORCHESTRATOR_URL: ${ORCHESTRATOR_URL:-http://orchestrator:4000}
+    volumes:
+      - ./services/web:/app:ro
+    ports:
+      - "${WEB_PORT:-3000}:3000"
