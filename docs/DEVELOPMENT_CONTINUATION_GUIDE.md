@@ -478,6 +478,10 @@ Symptom: diagnostics endpoint fails
 - check latest container logs
 - run reliability gates endpoint and inspect details/evidence
 
+Symptom: npm EPERM / permission denied in service folders
+- run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\fix_npm_permissions.ps1`
+- if needed, force clean reinstall: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\fix_npm_permissions.ps1 -CleanModules`
+
 ---
 
 ## 13. Source References
