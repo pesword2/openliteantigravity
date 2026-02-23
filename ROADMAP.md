@@ -5,11 +5,33 @@ Create an agent-first development environment where AI agents can plan, write, r
 
 ---
 
+## Scope Reset (2026-02-23): Single-User First
+
+### Active Scope
+- Optimize for one developer running locally or on a private VPS.
+- Deliver the core loop: plan -> execute -> verify artifacts -> retry/accept.
+- Focus on stability, deterministic behavior, and easy recovery.
+- Keep model-provider flexibility (OpenAI, Anthropic, Google, and local models when available).
+
+### Deferred Scope
+- Multi-user workspaces, sharing, and concurrent collaboration.
+- Public plugin marketplace and ecosystem distribution features.
+- Enterprise/compliance controls (SOC2, SSO, RBAC).
+- Billing, tenancy, and go-to-market packaging.
+
+### Phase Priority Override
+Use this roadmap as a complete backlog, but run execution in this order:
+1. Single-user UX depth and reliability.
+2. Single-user performance and safety hardening.
+3. Deferred multi-user/commercial expansion.
+
+---
+
 ## Phase 0 — Discovery & Constraints (2–4 weeks)
 
 ### Objectives
 - Understand Antigravity’s core UX patterns: agent manager, editor integration, artifacts, multi-agent coordination.
-- Define MVP functional boundaries and target audience (indie developers, teams, enterprise).
+- Define MVP functional boundaries for a single primary user (indie developer / solo operator).
 - Identify compliance, safety, and data privacy constraints.
 - Estimate budget, infrastructure, hosting model, and team composition.
 
@@ -26,7 +48,7 @@ Create an agent-first development environment where AI agents can plan, write, r
 ### Core System Components
 1. **Agent Manager / Orchestrator**
    - Manages lifecycle, role assignment, execution priority, and task queues.
-   - Responsible for multi-agent coordination and execution state.
+   - Responsible for single-agent execution state and queued task ordering for one user.
 
 2. **Frontend IDE / Editor**
    - Build a standalone desktop app OR extend VS Code.
@@ -80,6 +102,7 @@ Create an agent-first development environment where AI agents can plan, write, r
 ## Phase 3 — Advanced Feature Expansion (8–16 weeks)
 
 ### Platform Evolution
+- Status: deferred until single-user UX and reliability milestones are complete.
 1. **Multi-Agent Systems**
    - Agents specializing in testing, documentation, planning, UI flows, refactoring.
    - Task decomposition and cooperative execution.
@@ -178,10 +201,10 @@ Create an agent-first development environment where AI agents can plan, write, r
 - Browser automation + model routing.
 
 ### Month 5
-- Multi-agent orchestration + policy controls.
+- Single-user hardening, restore drills, and performance tuning.
 
 ### Month 6
-- Developer preview launch, tutorials, onboarding pipeline.
+- Single-user release candidate, tutorials, and onboarding pipeline.
 
 ---
 
@@ -206,6 +229,47 @@ Create an agent-first development environment where AI agents can plan, write, r
 - [ ] Audit logging + policy engine
 - [ ] Model router + fallback logic
 - [ ] Preview docs + onboarding
+- [x] Single-user reliability gates (restore drill, failure recovery, deterministic replay)
+
+### Reliability Development Slices (Implemented 2026-02-23)
+
+| Slice | Feature | Status |
+|-------|---------|--------|
+| S1 | Restore Drill Runner | ✅ Implemented |
+| S2 | Replay Consistency Diagnostics | ✅ Implemented |
+| S3 | Recovery Smoke Diagnostics | ✅ Implemented |
+| S4 | Reliability History/Trends | ✅ Implemented |
+| S5 | Run All Reliability Checks | ✅ Implemented |
+| S6 | Reliability Report Export (JSON/MD) | ✅ Implemented |
+| S7 | Docs Alignment | ✅ Implemented |
+| S8 | Hardening Pass | 🟡 In Progress |
+
+#### API Endpoints Added
+- `POST /v1/diagnostics/restore-drill/start` - Start restore drill
+- `GET /v1/diagnostics/restore-drill/latest` - Get latest drill result
+- `GET /v1/diagnostics/restore-drill/:id` - Get drill result by ID
+- `POST /v1/diagnostics/replay-consistency/start` - Start replay consistency check
+- `GET /v1/diagnostics/replay-consistency/latest` - Get latest consistency result
+- `POST /v1/diagnostics/recovery-smoke/start` - Start recovery smoke test
+- `GET /v1/diagnostics/recovery-smoke/latest` - Get latest smoke test result
+- `GET /v1/diagnostics/reliability-gates` - Get current reliability gates
+- `GET /v1/diagnostics/reliability-history` - Get reliability check history
+- `GET /v1/diagnostics/reliability-report/export?format=json|md` - Export reliability report
+
+Reliability runbook:
+- [docs/RELIABILITY_DIAGNOSTICS.md](./docs/RELIABILITY_DIAGNOSTICS.md)
+- [docs/DEVELOPMENT_CONTINUATION_GUIDE.md](./docs/DEVELOPMENT_CONTINUATION_GUIDE.md)
+
+S8 hardening progress (current):
+- Added concurrent-run guards for restore drill, replay consistency, and recovery smoke (`409 Conflict` when already running).
+- Added strict UUID validation for `GET /v1/diagnostics/restore-drill/:id`.
+- Tightened restore drill route matching to avoid accepting extra path segments.
+- Normalized diagnostic synthetic-task creation failures to client errors (`400`) rather than server errors (`500`).
+
+Deferred after single-user release:
+- [ ] Multi-agent orchestration
+- [ ] Marketplace and ecosystem distribution
+- [ ] Enterprise controls (RBAC, SSO, compliance)
 
 ---
 

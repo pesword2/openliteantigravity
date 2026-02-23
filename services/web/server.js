@@ -6,6 +6,7 @@ const path = require('path');
 const host = process.env.HOST || '0.0.0.0';
 const port = parsePort(process.env.PORT || '3000');
 const orchestratorBaseUrl = new URL(process.env.ORCHESTRATOR_URL || 'http://orchestrator:4000');
+const orchestratorApiToken = (process.env.ORCHESTRATOR_API_TOKEN || '').trim();
 const publicRoot = path.join(__dirname, 'public');
 
 const mimeTypes = {
@@ -38,15 +39,24 @@ function sendError(res, statusCode, message) {
 function proxyApiRequest(req, res, requestPath) {
   const targetUrl = new URL(requestPath, orchestratorBaseUrl);
   const transport = targetUrl.protocol === 'https:' ? https : http;
+  const proxyHeaders = {
+    'content-type': req.headers['content-type'] || 'application/json',
+    accept: req.headers.accept || 'application/json',
+  };
+  if (orchestratorApiToken) {
+    proxyHeaders.authorization = `Bearer ${orchestratorApiToken}`;
+  } else if (typeof req.headers.authorization === 'string' && req.headers.authorization.trim()) {
+    proxyHeaders.authorization = req.headers.authorization.trim();
+  }
+  if (typeof req.headers['x-api-key'] === 'string' && req.headers['x-api-key'].trim()) {
+    proxyHeaders['x-api-key'] = req.headers['x-api-key'].trim();
+  }
 
   const proxyRequest = transport.request(
     targetUrl,
     {
       method: req.method,
-      headers: {
-        'content-type': req.headers['content-type'] || 'application/json',
-        accept: req.headers.accept || 'application/json',
-      },
+      headers: proxyHeaders,
     },
     (proxyResponse) => {
       res.statusCode = proxyResponse.statusCode || 502;
@@ -74,6 +84,24 @@ function resolveStaticPath(urlPathname) {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+
+  if (req.method === 'GET' && url.pathname === '/health') {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(
+      JSON.stringify(
+        {
+          service: 'web',
+          status: 'ok',
+          orchestratorUrl: orchestratorBaseUrl.toString(),
+          time: new Date().toISOString(),
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
 
   if (url.pathname.startsWith('/api/')) {
     const pathWithoutPrefix = url.pathname.replace('/api', '') + url.search;

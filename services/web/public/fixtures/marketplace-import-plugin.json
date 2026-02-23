@@ -1,0 +1,23 @@
+{
+  "marketplaceId": "ops-pack-imported",
+  "name": "Ops Pack Imported",
+  "summary": "Imported starter plugin for operational run templates.",
+  "tags": ["ops", "imported", "starter"],
+  "manifest": {
+    "id": "ops-pack-imported",
+    "name": "Ops Pack Imported",
+    "version": "0.1.0",
+    "description": "Imported plugin used for marketplace import smoke tests.",
+    "enabled": false,
+    "contributions": {
+      "templates": [
+        {
+          "id": "incident-pass",
+          "label": "Incident Pass",
+          "description": "Plan, execute, review, and verify incident response changes.",
+          "roles": ["planner", "executor", "reviewer", "verifier"]
+        }
+      ]
+    }
+  }
+}
