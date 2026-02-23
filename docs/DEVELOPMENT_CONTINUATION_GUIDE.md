@@ -345,6 +345,18 @@ node --check .\services\web\server.js
 node --check .\services\web\public\app.js
 ```
 
+Integration tests:
+```powershell
+npm --prefix services/orchestrator test -- --runInBand
+npm --prefix services/web test -- --runInBand
+```
+
+Behavior note:
+- If target services are offline, integration tests run in skip-pass mode with a warning (no hard `AggregateError` failure).
+- For strict endpoint assertions, run services first and/or set:
+  - `ORCHESTRATOR_URL`
+  - `WEB_URL`
+
 ### 8.3 Deploy and verify
 
 ```powershell

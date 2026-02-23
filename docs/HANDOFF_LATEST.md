@@ -20,6 +20,17 @@
 - `GET /v1/plugins/marketplace`
 - `POST /v1/plugins/marketplace/install`
 
+## Integration Tests
+- `services/orchestrator/tests/orchestrator.test.js` and `services/web/tests/web.test.js` are external-service integration tests.
+- If target services are offline, tests run in skip-pass mode (single warning) instead of failing with `AggregateError`.
+- Strict verification mode:
+  - Start services first (local or tunneled VPS), then run:
+  - `npm --prefix services/orchestrator test -- --runInBand`
+  - `npm --prefix services/web test -- --runInBand`
+- Tunnel-targeted strict mode example:
+  - `set ORCHESTRATOR_URL=http://127.0.0.1:14100`
+  - `set WEB_URL=http://127.0.0.1:13100`
+
 ## Session Hygiene
 - Do not open Notepad for this workflow. Use VS Code/terminal-based tools only.
 - Do not leave one-off terminals open after commands finish.
