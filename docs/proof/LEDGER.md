@@ -109,3 +109,8 @@ ead_ledger\) on the orchestrator via SSE.
 - **Description**: Upgraded the local task.json state to be structurally mirrored into a Postgres Database running in Docker using 'pgPool' and ON CONFLICT DO UPDATE transactions.
 - **Verification**: Verified using Adminer UI on port 8080 and live PostgreSQL query verifying rows load seamlessly into Docker volumes payload.
 - **Date**: 2026-02-24
+
+### WP 4.5 - Isolated Workspace Layer & File I/O Tooling
+- **Description**: Configured default task workspace to \/workspaces\ locally resolving to \/opt/open-antigravity/workspaces\ on the VPS container host. Exposed \ead_file\ and \write_file\ to the native MCP Server endpoints strictly bounded by these safe workspace roots.
+- **Verification**: Built and deployed the volume mounts via \ps_connect.ps1 -Sync -Deploy\ successfully.
+- **Date**: 2026-02-24

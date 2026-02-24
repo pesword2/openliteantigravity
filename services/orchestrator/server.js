@@ -6936,6 +6936,43 @@ mcpServer.tool('read_ledger', 'Read the AEI Task Ledger to check task status and
   return { content: [{ type: 'text', text: JSON.stringify(recent, null, 2) }] };
 });
 
+mcpServer.tool('read_file', 'Safely read a file from the AEI workspace', {
+  filePath: z.string().describe('Absolute path to file or relative to default workspace')
+}, async (args) => {
+  try {
+    const rawPath = args.filePath.trim();
+    const resolvedPath = path.isAbsolute(rawPath) ? path.resolve(rawPath) : path.resolve(defaultWorkingDirectory, rawPath);
+    if (!isPathWithinAllowedWorkspaceRoots(resolvedPath, allowedWorkspaceRoots)) {
+      return { content: [{ type: 'text', text: `Error: Access Denied. Path ${resolvedPath} is outside allowed roots: ${[...allowedWorkspaceRoots].join(',')}` }] };
+    }
+    if (!fs.existsSync(resolvedPath)) {
+      return { content: [{ type: 'text', text: `Error: File not found at ${resolvedPath}` }] };
+    }
+    const content = fs.readFileSync(resolvedPath, 'utf8');
+    return { content: [{ type: 'text', text: content }] };
+  } catch (err) {
+    return { content: [{ type: 'text', text: `Failed reading file: ${err.message}` }] };
+  }
+});
+
+mcpServer.tool('write_file', 'Safely write content to a file in the AEI workspace', {
+  filePath: z.string().describe('Absolute path to file or relative to default workspace'),
+  content: z.string().describe('The complete file content to write')
+}, async (args) => {
+  try {
+    const rawPath = args.filePath.trim();
+    const resolvedPath = path.isAbsolute(rawPath) ? path.resolve(rawPath) : path.resolve(defaultWorkingDirectory, rawPath);
+    if (!isPathWithinAllowedWorkspaceRoots(resolvedPath, allowedWorkspaceRoots)) {
+      return { content: [{ type: 'text', text: `Error: Access Denied. Path ${resolvedPath} is outside allowed roots.` }] };
+    }
+    fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
+    writeFileAtomic(resolvedPath, args.content);
+    return { content: [{ type: 'text', text: `Successfully wrote payload to ${resolvedPath}` }] };
+  } catch (err) {
+    return { content: [{ type: 'text', text: `Failed writing file: ${err.message}` }] };
+  }
+});
+
 const mcpTransports = new Map();
 
 const server = http.createServer(async (req, res) => {

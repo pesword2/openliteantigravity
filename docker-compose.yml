@@ -15,9 +15,9 @@ services:
       MODEL_GATEWAY_TIMEOUT_MS: ${MODEL_GATEWAY_TIMEOUT_MS:-30000}
       MAX_TASK_COMMANDS: ${MAX_TASK_COMMANDS:-5}
       MAX_CONCURRENT_TASKS: ${MAX_CONCURRENT_TASKS:-1}
-      ALLOWED_COMMAND_PREFIXES: ${ALLOWED_COMMAND_PREFIXES:-node,npm,echo,ls,pwd,cat}
-      ALLOWED_WORKSPACE_ROOTS: ${ALLOWED_WORKSPACE_ROOTS:-/tmp,/app}
-      DEFAULT_WORKING_DIRECTORY: ${DEFAULT_WORKING_DIRECTORY:-/tmp}
+      ALLOWED_COMMAND_PREFIXES: ${ALLOWED_COMMAND_PREFIXES:-node,npm,echo,ls,pwd,cat,git,mkdir,touch,rm,cp,mv}
+      ALLOWED_WORKSPACE_ROOTS: ${ALLOWED_WORKSPACE_ROOTS:-/tmp,/app,/workspaces}
+      DEFAULT_WORKING_DIRECTORY: ${DEFAULT_WORKING_DIRECTORY:-/workspaces}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
@@ -36,6 +36,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-}
     volumes:
       - orchestrator_data:/data
+      - ./workspaces:/workspaces
     ports:
       - "${ORCHESTRATOR_HOST_PORT:-4000}:4000"
     healthcheck:
