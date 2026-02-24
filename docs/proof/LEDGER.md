@@ -114,3 +114,8 @@ ead_ledger\) on the orchestrator via SSE.
 - **Description**: Configured default task workspace to \/workspaces\ locally resolving to \/opt/open-antigravity/workspaces\ on the VPS container host. Exposed \ead_file\ and \write_file\ to the native MCP Server endpoints strictly bounded by these safe workspace roots.
 - **Verification**: Built and deployed the volume mounts via \ps_connect.ps1 -Sync -Deploy\ successfully.
 - **Date**: 2026-02-24
+
+### WP 4.6 - Authored AI Tooling & MCP Guide
+- **Description**: Authored \docs/AI_TOOLING_AND_MCP.md\ explaining the architecture of SSE streams and payload construction for client integrations connecting to the new Neural OS endpoints on Port 4000.
+- **Verification**: Markdown file created properly and tracked into Git history.
+- **Date**: 2026-02-24
