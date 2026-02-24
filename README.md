@@ -2,7 +2,7 @@
   <br />
   <img src=".github/assets/google-antigravity-logo.svg" width="200" />
   <br />
-  <h1>Open-Antigravity</h1>
+  <h1>AEI (Autonomous Engineering Intelligence)</h1>
 
   [Download](https://antigravity.google)
   <p><b>The Open-Source, Universal AI Gateway for Agentic Development</b></p>
@@ -20,7 +20,7 @@
 
 ---
 
-**Open-Antigravity** is not just another code editor or AI assistant. It's an ambitious open-source project to build a web-native, **agent-first** integrated development environment (IDE). Unlike proprietary platforms that lock you into a single AI ecosystem, Open-Antigravity is designed from the ground up to be a **universal gateway to any LLM**. Our goal is to create a platform where developers can delegate complex tasks to autonomous AI agents, powered by the models of their choice.
+**AEI** (formerly Open-Antigravity) is not just another code editor or AI assistant. It's an ambitious open-source project to build a web-native, **agent-first** integrated development environment (IDE). Unlike proprietary platforms that lock you into a single AI ecosystem, AEI is designed from the ground up to be a **universal gateway to any LLM**. Our goal is to create a platform where developers can delegate complex tasks to autonomous AI agents, powered by the models of their choice.
 
 This project is for you if you believe in:
 
@@ -190,7 +190,7 @@ The repository now includes a runnable MVP skeleton composed of:
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\vps_connect.ps1 -Status
    ```
 
-1. **Run MITM proxy separately (optional):**
+5. **Run MITM proxy separately (optional):**
 
     ```bash
     cd mitmserver

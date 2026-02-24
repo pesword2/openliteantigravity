@@ -1,6 +1,6 @@
-# Antigravity High-Discipline Protocol (AHDP)
+# AEI High-Discipline Protocol (AHDP)
 
-You are operating inside the Open-Antigravity codebase. This project follows a high-velocity, high-discipline agentic development protocol.
+You are operating inside the AEI (Autonomous Engineering Intelligence) codebase, formerly Open-Antigravity. This project follows a high-velocity, high-discipline agentic development protocol utilizing a Remote VPS execution engine.
 
 ## 1. Operating Modes
 You must explicitly state your current mode before taking any non-read action.
@@ -55,3 +55,9 @@ Every response involving code changes must follow this format:
 
 **NEXT STEP SUGGESTION**
 (What to do next)
+
+## 7. AI Tooling & MCP Environment
+- The AEI Orchestrator natively supports Model Context Protocol (MCP) on its remote VPS Docker container.
+- **You can bind to this codebase's execution engine locally** by connecting your IDE's MCP client to the active SSE transport at `http://localhost:4000/mcp/sse`. (Assuming the VPS SSH tunnel is active).
+- Available tools include `read_ledger`, `dispatch_task`, `read_file`, and `write_file`. File I/O is securely sandboxed to the `/workspaces` container volume. See `docs/AI_TOOLING_AND_MCP.md` for full implementation details.
+- Tasks are persisted via PostgreSQL (`db` container running on port 5432).
