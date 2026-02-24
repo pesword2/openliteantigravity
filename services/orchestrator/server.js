@@ -5,6 +5,9 @@ const fs = require('fs');
 const net = require('net');
 const path = require('path');
 const { randomUUID, createHash } = require('crypto');
+const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
+const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js');
+const { z } = require('zod');
 
 const host = process.env.HOST || '0.0.0.0';
 const port = parsePort(process.env.PORT || '4000');
@@ -17,7 +20,7 @@ const defaultCommandTimeoutMs = parsePositiveInt(process.env.COMMAND_TIMEOUT_MS,
 const maxTaskCommands = parsePositiveInt(process.env.MAX_TASK_COMMANDS, 5, 1, 20);
 const maxConcurrentTasks = parsePositiveInt(process.env.MAX_CONCURRENT_TASKS, 1, 1, 8);
 const maxCommandOutputChars = parsePositiveInt(process.env.MAX_COMMAND_OUTPUT_CHARS, 12000, 2000, 100000);
-const allowedCommandPrefixes = (process.env.ALLOWED_COMMAND_PREFIXES || 'node,npm,echo,ls,pwd,cat')
+const allowedCommandPrefixes = (process.env.ALLOWED_COMMAND_PREFIXES || 'node,npm,echo,ls,pwd,cat,curl,mkdir,touch,rm,cp,mv,git')
   .split(',')
   .map((item) => item.trim())
   .filter(Boolean);
@@ -64,6 +67,14 @@ const taskPriorityRank = {
 const defaultCollaborativeTemplateId = 'delivery';
 const defaultCollaborativeRoles = ['planner', 'executor', 'verifier'];
 const collaborativeRoleInstructions = {
+  director:
+    'You are the High-Level Director (C-Suite). Break down the user\'s vision into a Work Breakdown Structure (WBS), assign EPICS to department heads, and oversee strategic planning. Dispatch child tasks using curl.exe (POST http://localhost:14100/v1/tasks), including your parentTaskId in the JSON payload. Note: On Windows, you are running in a PowerShell environment; use PowerShell syntax for redirection and multi-line commands.',
+  lead_engineer:
+    'You are the Lead Engineer / Technical Director. Deconstruct EPICS into actionable technical tasks, design system architecture, and specify concrete implementation artifacts for Developers. Dispatch child tasks using curl.exe (POST http://localhost:14100/v1/tasks), including your parentTaskId in the JSON payload. Note: On Windows, you are running in a PowerShell environment; use PowerShell syntax.',
+  developer:
+    'You are the Developer / Individual Contributor. Execute specific technical tasks, write high-quality code, and ensure all specified artifacts are created and verified. Always report your progress and any blockers to your lead.',
+  qa_engineer:
+    'You are the QA Engineer. Verify that all implementation artifacts meet the specified requirements, run tests, and ensure the overall quality and reliability of the delivered code. You can use the Browser Service (http://localhost:14200) for visual regression or UI testing.',
   planner:
     'You are the planner agent. Produce a clear execution plan, enumerate assumptions, and identify verification steps.',
   executor:
@@ -72,9 +83,81 @@ const collaborativeRoleInstructions = {
     'You are the tester agent. Design and run focused test cases, report concrete pass/fail evidence, and surface reproducible failures.',
   reviewer:
     'You are the reviewer agent. Perform a code-review style pass, identify defects and risks, and recommend exact fixes with severity.',
+  researcher:
+    'You are the Researcher. Use the Browser Service (http://localhost:14200) endpoints: POST /v1/browser/navigate {url}, GET /v1/browser/content, POST /v1/browser/screenshot, POST /v1/browser/click {selector}, POST /v1/browser/type {selector, text}. Report findings clearly to the team.',
   verifier:
     'You are the verifier agent. Validate outcomes, run checks, and report pass/fail evidence with any residual risks.',
 };
+
+const roboticProtocol = `
+### ROBOTIC EXECUTION PROTOCOL
+1. **Command Extraction**: You MUST wrap all executable commands in markdown code blocks (e.g., \`\`\`bash or \`\`\`powershell).
+2. **Multi-line Commands**: Use PowerShell continuation (\`) if writing a single command across multiple lines.
+3. **No Placeholders**: Do not use [brackets] or placeholder text. Use absolute paths (e.g., D:/tmp/file.txt).
+4. **Tool Use**:
+   - For JSON APIs on Windows, use \`Invoke-RestMethod\` (e.g., \`Invoke-RestMethod -Uri "http://..." -Method Post -Body $jsonBody -ContentType "application/json"\`).
+   - Alternatively, use \`curl.exe\`. Note: Standard \`curl\` is often an alias for \`Invoke-WebRequest\`; use \`curl.exe\` for the binary.
+   - Use \`Set-Content\` or \`Add-Content\` for file creation.
+   - For child tasks, always include "parentTaskId": "[CURRENT_TASK_ID]" in the JSON payload.
+5. **Wait Mechanism**: If you spawn a child task and need its result, you CANNOT poll. You must finish your current task. The orchestrator will handle the sequence if you use dependencies or if the user initiates a cascade. Alternatively, use 'curl http://localhost:14100/v1/tasks/:id/wait' to block.
+`;
+
+function buildHandoverContext(task) {
+  if (!task || !task.dependsOn || task.dependsOn.length === 0) {
+    return '';
+  }
+
+  const contextLines = ['### HANDOVER CONTEXT (from dependencies)'];
+  for (const depId of task.dependsOn) {
+    const depTask = tasksById.get(depId);
+    if (!depTask) continue;
+
+    contextLines.push(`\n#### TASK: ${depTask.id} (${depTask.status})`);
+
+    // Look for key artifacts
+    const plan = depTask.artifacts.find(a => a.type === 'plan-request');
+    const output = depTask.artifacts.find(a => a.type === 'model-output');
+    const verification = depTask.artifacts.find(a => a.type === 'verification');
+
+    if (plan) contextLines.push(`\n- **Objective/Plan:**\n${plan.content}`);
+    if (output) contextLines.push(`\n- **Model Output (Implementation Intent):**\n${output.content}`);
+    if (verification) contextLines.push(`\n- **Initial Verification:**\n${verification.content}`);
+  }
+  return contextLines.join('\n');
+}
+
+function buildAutonomousExecutionPrompt(task) {
+  let roleInstructions = '';
+  const autoMatch = task.prompt.match(/^@(auto|auto-verify)\s+([a-zA-Z0-9_-]+):/i);
+  if (autoMatch) {
+    const role = autoMatch[2].toLowerCase();
+    roleInstructions = collaborativeRoleInstructions[role] || '';
+  }
+
+  const handover = buildHandoverContext(task);
+
+  return [
+    roleInstructions,
+    '',
+    roboticProtocol,
+    '',
+    handover,
+    '',
+    `DOCKER_CONTEXT: false (Running natively on Windows)`,
+    `TASK_ID: ${task.id}`,
+    `WORKING_DIRECTORY: ${task.workingDirectory}`,
+    '',
+    'USER_OBJECTIVE:',
+    task.prompt,
+  ].join('\n');
+}
+
+function buildCollaborativeTaskPrompt(basePrompt, role, runId, stepIndex, totalSteps) {
+  const instruction = collaborativeRoleInstructions[role] || '';
+  const heading = `[collab:${runId}] [role:${role}] [step:${stepIndex + 1}/${totalSteps}]`;
+  // Handover will be handled by buildAutonomousExecutionPrompt at runtime
+  return [heading, '', instruction, '', 'Objective:', basePrompt].join('\n');
+}
 const collaborativeRunTemplateCatalog = Object.freeze({
   delivery: {
     id: 'delivery',
@@ -88,6 +171,12 @@ const collaborativeRunTemplateCatalog = Object.freeze({
     description: 'Add explicit testing before final verification.',
     roles: ['planner', 'executor', 'tester', 'verifier'],
   },
+  research: {
+    id: 'research',
+    label: 'Research',
+    description: 'Deep-dive into a topic using web browsing and plan next steps.',
+    roles: ['researcher', 'planner'],
+  },
   review: {
     id: 'review',
     label: 'Review',
@@ -97,8 +186,14 @@ const collaborativeRunTemplateCatalog = Object.freeze({
   hardening: {
     id: 'hardening',
     label: 'Hardening',
-    description: 'Run implementation, testing, review, and final verification in sequence.',
-    roles: ['planner', 'executor', 'tester', 'reviewer', 'verifier'],
+    description: 'Intense reliability and restore testing loop.',
+    roles: ['planner', 'executor', 'tester', 'verifier'],
+  },
+  'verify-task': {
+    id: 'verify-task',
+    label: 'Verification Loop',
+    description: 'Execute a task and then have a second agent verify the results.',
+    roles: ['executor', 'verifier'],
   },
 });
 const collaborativeRunTemplates = Object.values(collaborativeRunTemplateCatalog).map((template) => ({
@@ -481,7 +576,7 @@ function resolveTaskStorePath(rawPath) {
     return path.resolve(value);
   }
 
-  return '/tmp/open-antigravity/tasks.json';
+  return '/tmp/aei/tasks.json';
 }
 
 function isIsoDate(value) {
@@ -980,6 +1075,55 @@ function parseTaskCommands(rawCommands) {
   }
 
   return { commands };
+}
+
+function extractCommandsFromText(text) {
+  const commands = [];
+  const codeBlockRegex = /```([a-zA-Z0-9-]*)\s*([\s\S]*?)```/g;
+  let match;
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    const lang = match[1].toLowerCase().trim();
+    const block = match[2].trim();
+
+    // Skip non-executable blocks
+    if (['json', 'markdown', 'md', 'text', 'yaml', 'yml', 'xml', 'html', 'css'].includes(lang)) {
+      continue;
+    }
+
+    if (block) {
+      const rawLines = block.split('\n');
+      let currentCommand = '';
+      for (const line of rawLines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//') || trimmed.startsWith('REM ')) {
+          if (currentCommand) {
+            // If we are in the middle of a multi-line command, comments are tricky.
+            // Usually they aren't allowed inside a single command string.
+            // We'll just continue and hope for the best.
+          }
+          continue;
+        }
+
+        if (currentCommand) {
+          currentCommand += ' ' + trimmed;
+        } else {
+          currentCommand = trimmed;
+        }
+
+        // Handle various shell line continuation characters: \, ^, `
+        if (currentCommand.endsWith('\\') || currentCommand.endsWith('^') || currentCommand.endsWith('`')) {
+          currentCommand = currentCommand.slice(0, -1).trim();
+        } else {
+          commands.push(currentCommand);
+          currentCommand = '';
+        }
+      }
+      if (currentCommand) {
+        commands.push(currentCommand);
+      }
+    }
+  }
+  return commands;
 }
 
 function parseTaskWorkingDirectory(rawWorkingDirectory) {
@@ -4161,15 +4305,18 @@ async function requestGoogleModel(modelId, prompt, temperature, maxOutputTokens)
   return text;
 }
 
-async function requestAzureFoundryModel(modelId, prompt, temperature, maxOutputTokens) {
+async function requestAzureFoundryModel(modelId, prompt, temperature, maxOutputTokens, taskId) {
   if (!azureFoundryChatUrl) {
     throw new Error('AZURE_FOUNDRY_CHAT_URL is not set.');
   }
 
   const url = withApiVersion(azureFoundryChatUrl, azureFoundryApiVersion);
-  const payload = await fetchJsonWithTimeout(
-    url,
-    {
+  const controller = new AbortController();
+  const timeoutHandle = setTimeout(() => controller.abort(), modelGatewayTimeoutMs);
+
+  let fullText = '';
+  try {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4180,23 +4327,66 @@ async function requestAzureFoundryModel(modelId, prompt, temperature, maxOutputT
         messages: [{ role: 'user', content: prompt }],
         temperature,
         max_tokens: maxOutputTokens,
+        stream: true,
       }),
-    },
-    modelGatewayTimeoutMs
-  );
+      signal: controller.signal,
+    });
 
-  const text = extractAzureFoundryText(payload);
-  if (!text) {
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      throw new Error(`Azure Foundry HTTP ${response.status}: ${errText.slice(0, 200)}`);
+    }
+
+    // Read SSE stream from Azure and re-emit tokens to AEI clients
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete line
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === 'data: [DONE]') continue;
+        if (!trimmed.startsWith('data: ')) continue;
+        try {
+          const chunk = JSON.parse(trimmed.slice(6));
+          const token = chunk?.choices?.[0]?.delta?.content;
+          if (typeof token === 'string' && token) {
+            fullText += token;
+            // Broadcast token to connected SSE clients
+            broadcastEvent({
+              type: 'task.stream',
+              taskId: taskId || null,
+              token,
+              timestamp: new Date().toISOString(),
+            });
+          }
+        } catch {
+          // malformed chunk — skip
+        }
+      }
+    }
+  } finally {
+    clearTimeout(timeoutHandle);
+  }
+
+  if (!fullText) {
     throw new Error(`Azure Foundry gateway returned no textual output for model "${modelId}".`);
   }
 
-  return text;
+  return fullText;
 }
 
 async function runModelGeneration(modelId, prompt, options) {
   const provider = inferProvider(modelId);
   const temperature = parseModelTemperature(options && options.temperature);
   const maxOutputTokens = parseModelMaxOutputTokens(options && options.maxOutputTokens);
+  const taskId = (options && options.taskId) || null;
 
   if (!hasProviderKey(provider)) {
     return {
@@ -4220,7 +4410,7 @@ async function runModelGeneration(modelId, prompt, options) {
   } else if (provider === 'google') {
     text = await requestGoogleModel(modelId, prompt, temperature, maxOutputTokens);
   } else if (provider === 'azure') {
-    text = await requestAzureFoundryModel(modelId, prompt, temperature, maxOutputTokens);
+    text = await requestAzureFoundryModel(modelId, prompt, temperature, maxOutputTokens, taskId);
   } else {
     return {
       provider,
@@ -4266,14 +4456,17 @@ function buildTask(payload) {
     return { error: dependsOnResult.error };
   }
   const commandTimeoutMs = normalizeCommandTimeoutMs(payload.commandTimeoutMs);
+  const isAutonomous = typeof payload.isAutonomous === 'boolean' ? payload.isAutonomous : prompt.startsWith('@auto');
 
   const now = new Date().toISOString();
   const task = {
     id: randomUUID(),
     prompt,
     modelId,
+    parentTaskId: typeof payload.parentTaskId === 'string' ? payload.parentTaskId : null,
     commands: commandResult.commands,
     workingDirectory: workingDirectoryResult.workingDirectory,
+    isAutonomous,
     priority: priorityResult.priority,
     dependsOn: dependsOnResult.dependsOn,
     commandTimeoutMs,
@@ -4296,6 +4489,10 @@ function buildTask(payload) {
     [
       'Prompt:',
       prompt,
+      '',
+      `Parent Task ID: ${task.parentTaskId || '(none)'}`,
+      '',
+      `Autonomous: ${isAutonomous}`,
       '',
       'Model:',
       modelId,
@@ -4715,20 +4912,45 @@ function truncateOutput(text) {
 
 function runSingleCommand(taskId, command, timeoutMs, workingDirectory) {
   return new Promise((resolve, reject) => {
-    let tokens;
-    try {
-      tokens = tokenizeCommand(command);
-    } catch (error) {
-      reject(new Error(`Invalid command "${command}": ${error.message}`));
-      return;
-    }
-    if (!tokens.length) {
-      reject(new Error('Cannot execute an empty command.'));
-      return;
+    let finalExecutable;
+    let finalArgs;
+    let tempScriptPath = null;
+
+    if (process.platform === 'win32') {
+      try {
+        const tempDir = process.env.TEMP || 'C:\\Windows\\Temp';
+        tempScriptPath = path.join(tempDir, `agent-task-${taskId}-${randomUUID().slice(0, 8)}.ps1`);
+        // Write the full command to a ps1 file
+        fs.writeFileSync(tempScriptPath, command, { encoding: 'utf8' });
+
+        finalExecutable = 'powershell.exe';
+        finalArgs = ['-ExecutionPolicy', 'Bypass', '-File', tempScriptPath];
+      } catch (err) {
+        reject(new Error(`Failed to create temp execution script: ${err.message}`));
+        return;
+      }
+    } else {
+      let tokens;
+      try {
+        tokens = tokenizeCommand(command);
+      } catch (error) {
+        reject(new Error(`Invalid command "${command}": ${error.message}`));
+        return;
+      }
+      if (!tokens.length) {
+        reject(new Error('Cannot execute an empty command.'));
+        return;
+      }
+
+      finalExecutable = tokens[0];
+      finalArgs = tokens.slice(1);
+
+      if (!allowlistedCommands.has(finalExecutable)) {
+        reject(new Error(`Command "${finalExecutable}" is not allowed.`));
+        return;
+      }
     }
 
-    const executable = tokens[0];
-    const args = tokens.slice(1);
     const commandEnv = {
       ...process.env,
       PATH: process.env.PATH || '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
@@ -4738,10 +4960,10 @@ function runSingleCommand(taskId, command, timeoutMs, workingDirectory) {
     let stderr = '';
     let timedOut = false;
 
-    const child = spawn(executable, args, {
+    const child = spawn(finalExecutable, finalArgs, {
       cwd: workingDirectory,
       env: commandEnv,
-      shell: process.platform === 'win32',
+      shell: process.platform !== 'win32',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
@@ -4776,6 +4998,12 @@ function runSingleCommand(taskId, command, timeoutMs, workingDirectory) {
     child.on('close', (code, signal) => {
       clearTimeout(timeoutHandle);
       activeTaskProcesses.delete(taskId);
+
+      // Cleanup temp script
+      if (tempScriptPath && fs.existsSync(tempScriptPath)) {
+        try { fs.unlinkSync(tempScriptPath); } catch (e) { }
+      }
+
       resolve({
         command,
         code: Number.isInteger(code) ? code : 1,
@@ -4791,29 +5019,68 @@ function runSingleCommand(taskId, command, timeoutMs, workingDirectory) {
 async function executeTaskCommands(task) {
   if (!task.commands.length) {
     await wait(400);
-    const modelResponse = await runModelGeneration(task.modelId, task.prompt, {});
+    const enrichedPrompt = task.isAutonomous ? buildAutonomousExecutionPrompt(task) : task.prompt;
+    const modelResponse = await runModelGeneration(task.modelId, enrichedPrompt, { taskId: task.id });
     const checkStatus = modelResponse.simulated ? 'unknown' : 'pass';
     const modelMode = modelResponse.simulated ? 'simulated-fallback' : 'provider-api';
-    return {
-      checks: [
-        {
-          name: `model-generation:${task.modelId}`,
-          status: checkStatus,
-          provider: modelResponse.provider,
-          mode: modelMode,
-        },
-      ],
-      executionLog: [
-        `cwd: ${task.workingDirectory}`,
-        '$ (model generation)',
-        `provider: ${modelResponse.provider}`,
-        `mode: ${modelMode}`,
-      ].join('\n'),
-      modelOutput: modelResponse.text,
-      summary: modelResponse.simulated
-        ? 'No commands executed; returned simulated model output (provider key missing).'
-        : 'No commands executed; model output generated via provider API.',
-    };
+
+    if (typeof modelResponse.text === 'string' && modelResponse.text.trim()) {
+      addArtifact(task, 'model-output', 'Model Output', modelResponse.text);
+    }
+
+    if (task.isAutonomous && !modelResponse.simulated) {
+      const extracted = extractCommandsFromText(modelResponse.text);
+      if (extracted.length > 0) {
+        task.commands = extracted;
+        const plan = [
+          'Proposed Execution Plan:',
+          ...extracted.map((c, i) => `${i + 1}. ${c}`),
+        ].join('\n');
+        addArtifact(task, 'plan', 'Execution Plan', plan);
+        appendTimeline(task, 'running', `Extracted ${extracted.length} command(s) for autonomous execution.`);
+      } else {
+        return {
+          checks: [
+            {
+              name: `model-generation:${task.modelId}`,
+              status: checkStatus,
+              provider: modelResponse.provider,
+              mode: modelMode,
+            },
+          ],
+          executionLog: [
+            `cwd: ${task.workingDirectory}`,
+            '$ (model generation)',
+            'No commands found for autonomous execution.',
+            `provider: ${modelResponse.provider}`,
+            `mode: ${modelMode}`,
+          ].join('\n'),
+          modelOutput: modelResponse.text,
+          summary: 'Autonomous task found no commands to execute.',
+        };
+      }
+    } else {
+      return {
+        checks: [
+          {
+            name: `model-generation:${task.modelId}`,
+            status: checkStatus,
+            provider: modelResponse.provider,
+            mode: modelMode,
+          },
+        ],
+        executionLog: [
+          `cwd: ${task.workingDirectory}`,
+          '$ (model generation)',
+          `provider: ${modelResponse.provider}`,
+          `mode: ${modelMode}`,
+        ].join('\n'),
+        modelOutput: modelResponse.text,
+        summary: modelResponse.simulated
+          ? 'No commands executed; returned simulated model output (provider key missing).'
+          : 'No commands executed; model output generated via provider API.',
+      };
+    }
   }
 
   const commandResults = [];
@@ -4878,9 +5145,6 @@ async function startTaskExecution(task) {
       return;
     }
 
-    if (typeof result.modelOutput === 'string' && result.modelOutput.trim()) {
-      addArtifact(task, 'model-output', 'Model Output', result.modelOutput);
-    }
     addArtifact(task, 'execution-log', 'Execution Log', result.executionLog);
     addArtifact(task, 'verification', 'Verification Report', buildVerificationArtifact(result.checks));
     task.status = 'completed';
@@ -5970,7 +6234,7 @@ function buildAuditExportJson(searchParams) {
 function buildAuditExportMarkdown(searchParams) {
   const report = buildAuditExportJson(searchParams);
   const lines = [];
-  lines.push('# Open-Antigravity Audit Export');
+  lines.push('# aei Audit Export');
   lines.push('');
   lines.push(`Generated: ${report.generatedAt}`);
   lines.push(`Total tasks: ${report.summary.totalTasks}`);
@@ -6183,6 +6447,8 @@ function loadPersistedTasks() {
         priority: normalizeTaskPriority(candidate.priority),
         dependsOn: normalizeTaskDependsOn(candidate.dependsOn),
         commandTimeoutMs: normalizeCommandTimeoutMs(candidate.commandTimeoutMs),
+        parentTaskId: typeof candidate.parentTaskId === 'string' ? candidate.parentTaskId : null,
+        isAutonomous: typeof candidate.isAutonomous === 'boolean' ? candidate.isAutonomous : candidate.prompt.startsWith('@auto'),
         status: normalizeTaskStatus(candidate.status),
         createdAt: isIsoDate(candidate.createdAt) ? candidate.createdAt : now,
         updatedAt: isIsoDate(candidate.updatedAt) ? candidate.updatedAt : now,
@@ -6552,6 +6818,77 @@ function loadPersistedTasks() {
 loadPluginMarketplaceCatalog();
 loadPersistedTasks();
 
+// --- MCP Server Setup (Neural OS) ---
+const mcpServer = new McpServer({
+  name: 'aei-neuralos-mcp',
+  version: '1.0.0',
+});
+
+mcpServer.tool('dispatch_task', 'Dispatch a task to the AEI Orchestrator (Neural OS)', {
+  department: z.enum(['logic', 'engineering']).describe('Routing: logic=Azure GPT-4, engineering=IONOS Llama'),
+  action: z.string().describe('The action to perform'),
+  constraints: z.array(z.string()).optional().describe('Operational constraints'),
+  prompt: z.string().optional().describe('Detailed contextual prompt for the task'),
+}, async (args) => {
+  const fullPrompt = [
+    `@auto: [Neural OS Handshake]`,
+    `Department: ${args.department}`,
+    `Action: ${args.action}`,
+    args.constraints?.length ? `Constraints: ${args.constraints.join(', ')}` : '',
+    '',
+    args.prompt || ''
+  ].filter(Boolean).join('\n');
+
+  const result = buildTask({
+    prompt: fullPrompt,
+    modelId: args.department === 'logic' ? 'gpt-4.1' : 'llama-3.3',
+    priority: 'high',
+    workingDirectory: defaultWorkingDirectory
+  });
+
+  if (result.error) {
+    return { content: [{ type: 'text', text: `Failed to dispatch task: ${result.error}` }] };
+  }
+
+  return {
+    content: [{
+      type: 'text',
+      text: `Success. Dispatched Task ID: ${result.task.id} to department: ${args.department}. Check local task ledger for status.`
+    }]
+  };
+});
+
+mcpServer.tool('read_ledger', 'Read the AEI Task Ledger to check task status and artifacts', {
+  limit: z.number().default(5).describe('Number of recent tasks to return'),
+  taskId: z.string().optional().describe('Specific task ID to query')
+}, async (args) => {
+  if (args.taskId) {
+    const task = tasksById.get(args.taskId);
+    if (!task) return { content: [{ type: 'text', text: `Task ${args.taskId} not found.` }] };
+    return {
+      content: [{
+        type: 'text', text: JSON.stringify({
+          id: task.id,
+          status: task.status,
+          modelId: task.modelId,
+          result: task.result,
+          artifacts: task.artifacts.map(a => ({ type: a.type, title: a.title }))
+        }, null, 2)
+      }]
+    };
+  }
+
+  const recent = tasks.slice(-args.limit).map(task => ({
+    id: task.id,
+    status: task.status,
+    modelId: task.modelId,
+    promptExcerpt: task.prompt.substring(0, 100).replace(/\n/g, ' ')
+  }));
+  return { content: [{ type: 'text', text: JSON.stringify(recent, null, 2) }] };
+});
+
+const mcpTransports = new Map();
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const taskRoute = matchTaskRoute(url.pathname);
@@ -6596,6 +6933,34 @@ const server = http.createServer(async (req, res) => {
       status: 'ok',
       time: new Date().toISOString(),
     });
+    return;
+  }
+
+  // --- MCP Endpoints ---
+  if (req.method === 'GET' && url.pathname === '/mcp/sse') {
+    const transport = new SSEServerTransport('/mcp/messages', res);
+    await mcpServer.connect(transport);
+    mcpTransports.set(transport.sessionId, transport);
+
+    // Attempting to attach close handler dynamically as some SDK versions wrap logic
+    if (typeof transport.onclose === 'function') {
+      const _origClose = transport.onclose;
+      transport.onclose = () => { mcpTransports.delete(transport.sessionId); _origClose.call(transport); };
+    } else {
+      transport.onclose = () => mcpTransports.delete(transport.sessionId);
+    }
+    return;
+  }
+
+  if (req.method === 'POST' && url.pathname === '/mcp/messages') {
+    const sessionId = url.searchParams.get('sessionId');
+    const transport = mcpTransports.get(sessionId);
+    if (!transport) {
+      res.statusCode = 404;
+      res.end('MCP Session not found');
+      return;
+    }
+    await transport.handlePostMessage(req, res);
     return;
   }
 
@@ -6848,7 +7213,7 @@ const server = http.createServer(async (req, res) => {
 
     if (format === 'md' || format === 'markdown') {
       const lines = [];
-      lines.push('# Open-Antigravity Reliability Report');
+      lines.push('# aei Reliability Report');
       lines.push('');
       lines.push(`**Generated:** ${new Date().toISOString()}`);
       lines.push(`**Overall Status:** ${gatesResult.overall.toUpperCase()}`);
@@ -7234,6 +7599,25 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && url.pathname === '/v1/tasks') {
     try {
       const payload = await parseJsonBody(req);
+      const prompt = typeof payload.prompt === 'string' ? payload.prompt.trim() : '';
+
+      if (prompt.toLowerCase().startsWith('@auto-verify')) {
+        // Redirect to collaborative verification loop
+        const cleanPrompt = prompt.replace(/^@auto-verify\s*:?\s*/i, '');
+        const collabPayload = {
+          ...payload,
+          prompt: cleanPrompt,
+          templateId: 'verify-task'
+        };
+        const result = createCollaborativeRun(collabPayload);
+        if (result.error) {
+          sendJson(res, result.status || 400, { error: result.error });
+          return;
+        }
+        sendJson(res, 201, result.run);
+        return;
+      }
+
       const result = buildTask(payload);
       if (result.error) {
         sendJson(res, 400, { error: result.error });
@@ -7373,6 +7757,26 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     sendJson(res, 200, { taskId: task.id, artifacts: task.artifacts });
+    return;
+  }
+
+  if (taskRoute && req.method === 'GET' && taskRoute.subresource === 'wait') {
+    const task = getTaskById(taskRoute.taskId);
+    if (!task) {
+      sendJson(res, 404, { error: `Task "${taskRoute.taskId}" not found.` });
+      return;
+    }
+
+    const startWait = Date.now();
+    const waitTimeoutMs = parsePositiveInt(url.searchParams.get('timeout'), 120000, 1000, 300000);
+
+    while (task.status !== 'completed' && task.status !== 'failed' && task.status !== 'canceled') {
+      if (Date.now() - startWait > waitTimeoutMs) {
+        break;
+      }
+      await wait(1000);
+    }
+    sendJson(res, 200, buildTaskResponse(task));
     return;
   }
 

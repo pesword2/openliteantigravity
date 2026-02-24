@@ -960,14 +960,14 @@ async function refreshPluginCatalog() {
   state.plugins = catalog.map((entry) => {
     const modelCount =
       Number.isInteger(entry.modelContributions) ||
-      (entry.capabilities && Array.isArray(entry.capabilities.modelIds))
+        (entry.capabilities && Array.isArray(entry.capabilities.modelIds))
         ? Number.isInteger(entry.modelContributions)
           ? entry.modelContributions
           : entry.capabilities.modelIds.length
         : 0;
     const templateCount =
       Number.isInteger(entry.templateContributions) ||
-      (entry.capabilities && Array.isArray(entry.capabilities.templateIds))
+        (entry.capabilities && Array.isArray(entry.capabilities.templateIds))
         ? Number.isInteger(entry.templateContributions)
           ? entry.templateContributions
           : entry.capabilities.templateIds.length
@@ -1135,7 +1135,7 @@ async function importPluginMarketplaceFromUrl() {
     await refresh();
   } catch (error) {
     pluginMarketplaceOutput.textContent = `Error importing marketplace plugin: ${error.message}`;
-    await refresh().catch(() => {});
+    await refresh().catch(() => { });
   } finally {
     importPluginMarketplaceBtn.disabled = false;
   }
@@ -1173,7 +1173,7 @@ async function installSelectedMarketplacePlugin() {
       pluginMarketplaceUpdateExistingInput.checked = true;
     }
     pluginMarketplaceOutput.textContent = `Error installing marketplace plugin: ${message}`;
-    await refresh().catch(() => {});
+    await refresh().catch(() => { });
   } finally {
     installMarketplacePluginBtn.disabled = false;
   }
@@ -1204,7 +1204,7 @@ async function updateSelectedPluginFromInput() {
     await refresh();
   } catch (error) {
     pluginOutput.textContent = `Error updating plugin: ${error.message}`;
-    await refresh().catch(() => {});
+    await refresh().catch(() => { });
   } finally {
     updatePluginBtn.disabled = false;
   }
@@ -1232,7 +1232,7 @@ async function runSelectedPluginHealthcheck() {
     await refresh();
   } catch (error) {
     pluginOutput.textContent = `Error running plugin healthcheck: ${error.message}`;
-    await refresh().catch(() => {});
+    await refresh().catch(() => { });
   } finally {
     healthcheckPluginBtn.disabled = false;
   }
@@ -1281,7 +1281,7 @@ async function setSelectedPluginEnabled(enabled) {
     await refresh();
   } catch (error) {
     pluginOutput.textContent = `Error updating plugin: ${error.message}`;
-    await refresh().catch(() => {});
+    await refresh().catch(() => { });
   }
 }
 
@@ -1307,7 +1307,7 @@ async function removeSelectedPlugin() {
     await refresh();
   } catch (error) {
     pluginOutput.textContent = `Error removing plugin: ${error.message}`;
-    await refresh().catch(() => {});
+    await refresh().catch(() => { });
   }
 }
 
@@ -1337,21 +1337,32 @@ function renderTasks(tasks) {
 
   for (const task of tasks) {
     const selected = task.id === state.selectedTaskId;
+    const shortId = typeof task.id === 'string' ? task.id.slice(0, 8) : 'unknown';
+    const promptPreview = typeof task.prompt === 'string'
+      ? (task.prompt.length > 80 ? task.prompt.slice(0, 80) + '...' : task.prompt)
+      : '(no prompt)';
+    const commandCount = Array.isArray(task.commands) ? task.commands.length : 0;
+
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = selected ? 'task-row is-selected' : 'task-row';
-    button.dataset.status = typeof task.status === 'string' ? task.status.toLowerCase() : 'unknown';
+    const statusClass = `status-badge status-${task.status.toLowerCase()}`;
+    const parentIdContext = task.parentTaskId
+      ? `<div class="parent-label">Parent: ${task.parentTaskId.slice(0, 8)}</div>`
+      : '<div class="entry-label">Entry Point</div>';
 
-    const shortId = task.id.slice(0, 8);
-    const promptPreview = task.prompt.length > 70 ? `${task.prompt.slice(0, 70)}...` : task.prompt;
-    const commandCount = Array.isArray(task.commands) ? task.commands.length : 0;
-    const workingDirectory = typeof task.workingDirectory === 'string' ? task.workingDirectory : '?';
-    const priority = normalizeTaskPriority(task.priority);
-    const statusLabel = formatTaskStatusLabel(task.status);
-    const priorityLabel = formatTaskPriorityLabel(priority);
-    const queueContext = formatTaskQueueContext(task);
-    const dependencyContext = formatTaskDependencyContext(task);
-    button.textContent = `${promptPreview}\nTask ${shortId} • ${statusLabel} • ${priorityLabel} priority\nModel: ${task.modelId} • ${formatCountLabel(commandCount, 'command')}\nQueue: ${queueContext}\n${dependencyContext}\nWorkspace: ${workingDirectory}`;
+    button.className = selected ? 'task-item selected' : 'task-item';
+    button.innerHTML = `
+      <div class="task-meta">
+        <span class="${statusClass}">${task.status}</span>
+        <span class="task-time">${shortId}</span>
+      </div>
+      ${parentIdContext}
+      <div class="task-prompt-preview">${escapeHtml(promptPreview)}</div>
+      <div class="task-footer">
+        <span>${task.modelId}</span>
+        <span>${formatCountLabel(commandCount, 'command')}</span>
+      </div>
+    `;
     button.addEventListener('click', () => {
       state.selectedTaskId = task.id;
       refreshDetails().catch((error) => {
@@ -1532,7 +1543,11 @@ function renderTimeline(timeline) {
 
   for (const entry of timeline) {
     const item = document.createElement('li');
-    item.textContent = `${entry.createdAt} | ${humanizeToken(entry.state)} | ${entry.message}`;
+    item.className = 'timeline-item';
+    item.innerHTML = `
+      <span class="timeline-time">${new Date(entry.createdAt).toLocaleTimeString()}</span>
+      <div class="timeline-msg"><strong>${entry.state}</strong>: ${escapeHtml(entry.message)}</div>
+    `;
     timelineEl.appendChild(item);
   }
 }
@@ -1549,22 +1564,14 @@ function renderArtifacts(artifacts) {
 
   for (const artifact of artifacts) {
     const item = document.createElement('li');
-    item.className = 'artifact-item';
-    const details = document.createElement('details');
-    details.className = 'artifact-details';
-    details.open = false;
-
-    const summary = document.createElement('summary');
-    summary.className = 'artifact-summary';
-    summary.textContent = `${artifact.title} (${humanizeToken(artifact.type)}) | ${artifact.createdAt}`;
-
-    const pre = document.createElement('pre');
-    pre.className = 'artifact-content';
-    pre.textContent = artifact.content;
-
-    details.appendChild(summary);
-    details.appendChild(pre);
-    item.appendChild(details);
+    item.className = 'artifact-card';
+    item.innerHTML = `
+      <div class="artifact-header">
+        <strong>${escapeHtml(artifact.title)}</strong>
+        <span class="status-badge">${artifact.type}</span>
+      </div>
+      <pre class="artifact-content">${escapeHtml(artifact.content)}</pre>
+    `;
     artifactsEl.appendChild(item);
   }
 }
@@ -1772,9 +1779,46 @@ function connectEventStream() {
       return;
     }
 
+    const type = typeof parsed.type === 'string' ? parsed.type : '';
+
+    // ── LIVE STREAMING CONSOLE ──
+    if (type === 'task.stream') {
+      const consoleEl = document.getElementById('agent-console-output');
+      const statusEl = document.getElementById('console-status');
+      const token = parsed.token;
+      if (consoleEl && typeof token === 'string') {
+        // Remove idle placeholder on first token
+        const idle = consoleEl.querySelector('.console-idle');
+        if (idle) idle.remove();
+        // Remove old cursor
+        const oldCursor = consoleEl.querySelector('.console-cursor');
+        if (oldCursor) oldCursor.remove();
+        // Append token as text node
+        consoleEl.appendChild(document.createTextNode(token));
+        // Re-add blinking cursor at end
+        const cursor = document.createElement('span');
+        cursor.className = 'console-cursor';
+        consoleEl.appendChild(cursor);
+        // Auto-scroll
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+      }
+      if (statusEl) {
+        statusEl.textContent = 'thinking';
+        statusEl.className = 'console-status-badge thinking';
+        // Mark done after 2s of no new tokens
+        clearTimeout(statusEl._doneTimer);
+        statusEl._doneTimer = setTimeout(() => {
+          statusEl.textContent = 'done';
+          statusEl.className = 'console-status-badge done';
+          const cursor = consoleEl && consoleEl.querySelector('.console-cursor');
+          if (cursor) cursor.remove();
+        }, 2000);
+      }
+      return; // Don't add stream tokens to event list
+    }
+
     prependEvent(parsed);
 
-    const type = typeof parsed.type === 'string' ? parsed.type : '';
     if (
       type.startsWith('task.') ||
       type.startsWith('run.') ||
@@ -1804,9 +1848,9 @@ function connectEventStream() {
 function isQueuePaused(statusPayload) {
   return Boolean(
     statusPayload &&
-      statusPayload.components &&
-      statusPayload.components.queueManager &&
-      statusPayload.components.queueManager.paused
+    statusPayload.components &&
+    statusPayload.components.queueManager &&
+    statusPayload.components.queueManager.paused
   );
 }
 
@@ -1855,17 +1899,9 @@ async function refreshDetails() {
   const priorityLabel = formatTaskPriorityLabel(priority);
   const queueContext = formatTaskQueueContext(task);
   const dependencyContext = formatTaskDependencyContext(task);
-  selectedTaskLabelEl.textContent = [
-    `Task ${task.id}`,
-    `Status: ${statusLabel}`,
-    `Priority: ${priorityLabel}`,
-    `Queue: ${queueContext}`,
-    dependencyContext,
-    `Model: ${task.modelId}`,
-    `Commands: ${formatCountLabel(commandCount, 'command')}`,
-    `Workspace: ${workingDirectory}`,
-    `Timeout: ${task.commandTimeoutMs || 'default'} ms`,
-  ].join('\n');
+  document.getElementById('task-actions-row').style.display = 'flex';
+  selectedTaskLabelEl.textContent = `Operation: ${task.id.slice(0, 8)}`;
+  selectedTaskLabelEl.className = 'selected-title';
   replayTaskBtn.disabled = false;
   cancelTaskBtn.disabled = terminalStatuses.has(task.status);
   renderTimeline(task.timeline || []);
@@ -1895,8 +1931,8 @@ async function refresh() {
     state.runTemplates = runTemplatePayload.templates || [];
     state.plugins = pluginPayload.plugins || [];
     state.edits = editPayload.edits || [];
-    await refreshPluginCatalog().catch(() => {});
-    await refreshPluginMarketplace().catch(() => {});
+    await refreshPluginCatalog().catch(() => { });
+    await refreshPluginMarketplace().catch(() => { });
 
     renderStatus(status);
     renderQueueControls(status);
@@ -2214,7 +2250,7 @@ selfHealRunBtn.addEventListener('click', async () => {
     await refresh();
   } catch (error) {
     collabOutput.textContent = `Error queueing self-heal: ${error.message}`;
-    await refresh().catch(() => {});
+    await refresh().catch(() => { });
   } finally {
     selfHealRunBtn.disabled = false;
   }
@@ -2678,7 +2714,7 @@ async function applySelectedEdit() {
     await refresh();
   } catch (error) {
     editOutput.textContent = `Error: ${error.message}`;
-    await refresh().catch(() => {});
+    await refresh().catch(() => { });
   }
 }
 
@@ -2704,7 +2740,7 @@ async function rejectSelectedEdit() {
     await refresh();
   } catch (error) {
     editOutput.textContent = `Error: ${error.message}`;
-    await refresh().catch(() => {});
+    await refresh().catch(() => { });
   }
 }
 
@@ -2730,7 +2766,7 @@ async function revertSelectedEdit() {
     await refresh();
   } catch (error) {
     editOutput.textContent = `Error: ${error.message}`;
-    await refresh().catch(() => {});
+    await refresh().catch(() => { });
   }
 }
 
@@ -2818,6 +2854,16 @@ editPathInput.addEventListener('input', () => {
 clearEventsBtn.addEventListener('click', () => {
   eventsEl.innerHTML = '';
 });
+
+const clearConsoleBtnEl = document.getElementById('clear-console-btn');
+if (clearConsoleBtnEl) {
+  clearConsoleBtnEl.addEventListener('click', () => {
+    const consoleEl = document.getElementById('agent-console-output');
+    const statusEl = document.getElementById('console-status');
+    if (consoleEl) consoleEl.innerHTML = '<span class="console-idle">Waiting for agent activity…</span>';
+    if (statusEl) { statusEl.textContent = 'idle'; statusEl.className = 'console-status-badge'; }
+  });
+}
 
 if (runtimeDiagnosticsBtn) {
   runtimeDiagnosticsBtn.addEventListener('click', async () => {
@@ -2996,17 +3042,17 @@ async function runAllReliabilityChecks() {
   runAllReliabilityBtn.disabled = true;
   restoreDrillOutput.textContent = 'Running all reliability checks...';
   replayConsistencyOutput.textContent = 'Running all reliability checks...';
-  
+
   try {
     // Step 1: Restore Drill
     await runRestoreDrill();
-    
+
     // Step 2: Replay Consistency
     await runReplayConsistency();
-    
+
     // Step 3: Reload Reliability Gates (which auto-records to history)
     await loadReliabilityGates();
-    
+
     restoreDrillOutput.textContent += '\n\nAll reliability checks completed.';
     replayConsistencyOutput.textContent += '\n\nAll reliability checks completed.';
   } catch (error) {

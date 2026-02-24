@@ -1,298 +1,253 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Open-Antigravity Local Dashboard</title>
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <header class="topbar">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AEI | Autonomous Engineering Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@300;500;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <!-- ═══════════ TOPBAR ═══════════ -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="logo-icon">AEI</div>
       <div class="topbar-copy">
-        <h1>Open-Antigravity</h1>
-        <p>Local Task Orchestrator Dashboard</p>
+        <h1>AEI</h1>
+        <p>Autonomous Engineering Intelligence</p>
       </div>
-      <div class="topbar-actions">
-        <label class="checkbox-label" for="simple-mode-toggle">
-          <input id="simple-mode-toggle" type="checkbox" checked />
-          Simple Mode
-        </label>
-        <button type="button" id="collapse-advanced-btn" class="secondary small">Hide Advanced</button>
-        <button type="button" id="expand-panels-btn" class="secondary small">Expand Panels</button>
+    </div>
+    <div class="topbar-actions">
+      <div class="status-indicator">
+        <span class="pulse"></span>
+        System Online
       </div>
-    </header>
-    <main class="layout">
-      <section class="panel manager">
-        <h2>Manager View</h2>
-        <section class="quick-guide" aria-label="Quick Start">
-          <h3>Quick Start</h3>
-          <ol class="quick-steps">
-            <li>Write your task in plain English.</li>
-            <li>Pick a model and queue the task.</li>
-            <li>Select a task to review timeline and artifacts.</li>
-          </ol>
-        </section>
+      <label class="switch-label" for="simple-mode-toggle">
+        <input id="simple-mode-toggle" type="checkbox" checked />
+        <span class="switch-slider"></span>
+        Simple Mode
+      </label>
+      <button type="button" id="collapse-advanced-btn" class="secondary small">Dev Tools</button>
+      <button type="button" id="refresh-btn" class="secondary small">Sync</button>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <!-- ═══════════ COLUMN 1: DISPATCH ═══════════ -->
+    <section class="panel dispatch">
+      <div class="panel-head">
+        <h2>Task Dispatch</h2>
+        <div class="subtitle">Queue a task for autonomous execution</div>
+      </div>
+      <div class="panel-body">
+
+        <!-- PRIMARY FORM -->
         <form id="task-form">
-          <label for="task-prompt">Create Task</label>
-          <textarea
-            id="task-prompt"
-            name="prompt"
-            rows="4"
-            placeholder="Implement a login API with tests"
-            required
-          ></textarea>
+          <label for="task-prompt">Objective</label>
+          <textarea id="task-prompt" name="prompt" rows="4"
+            placeholder="@auto-verify: Build a /health endpoint and verify it responds 200" required></textarea>
+
+          <button type="submit">⚡ Deploy Task</button>
+
+          <p id="queue-summary" class="helper-text"></p>
+          <div class="button-row" style="margin-top:0.5rem">
+            <button type="button" id="pause-queue-btn" class="secondary small">Pause</button>
+            <button type="button" id="resume-queue-btn" class="secondary small" disabled>Resume</button>
+            <button type="button" id="cancel-queued-btn" class="danger small">Cancel Queued</button>
+          </div>
+        </form>
+
+        <!-- COLLAB QUICK LAUNCH -->
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border)">
+          <p class="helper-text">Multi-Agent EPIC</p>
+          <textarea id="collab-prompt" name="collabPrompt" rows="2"
+            placeholder="Design, implement, and verify a health-check endpoint."></textarea>
+          <select id="collab-template" name="collabTemplate" style="margin-top:0.4rem"></select>
+          <div class="button-row" style="margin-top:0.5rem">
+            <button type="button" id="queue-specialized-collab-btn" class="secondary small">Spawn Agent Group</button>
+            <button type="button" id="queue-collab-btn" class="secondary small">Custom Roles</button>
+          </div>
+        </div>
+
+        <!-- ── HIDDEN ADVANCED FIELDS (required by app.js, not shown by default) ── -->
+        <div data-advanced="true">
           <label for="task-commands">Commands (optional, one per line)</label>
-          <textarea
-            id="task-commands"
-            name="commands"
-            rows="3"
-            placeholder="npm -v&#10;node -v"
-          ></textarea>
+          <textarea id="task-commands" name="commands" rows="2"></textarea>
           <label for="task-working-directory">Working Directory</label>
-          <input
-            id="task-working-directory"
-            name="workingDirectory"
-            type="text"
-            value="/tmp"
-            placeholder="/tmp"
-          />
+          <input id="task-working-directory" name="workingDirectory" type="text" value="D:/tmp" />
           <label for="task-model">Model</label>
           <select id="task-model" name="modelId"></select>
           <label for="task-priority">Priority</label>
           <select id="task-priority" name="priority">
-            <option value="high">high</option>
-            <option value="normal" selected>normal</option>
-            <option value="low">low</option>
+            <option value="high">High</option>
+            <option value="normal" selected>Normal</option>
+            <option value="low">Low</option>
           </select>
-          <label for="task-depends-on">Depends On (optional, comma-separated task IDs)</label>
-          <input
-            id="task-depends-on"
-            name="dependsOn"
-            type="text"
-            placeholder="a111..., b222..."
-          />
-          <div class="button-row">
-            <button type="submit">Queue Task</button>
-            <button type="button" id="refresh-btn" class="secondary">Refresh</button>
-            <button type="button" id="pause-queue-btn" class="secondary">Pause Queue</button>
-            <button type="button" id="resume-queue-btn" class="secondary" disabled>Resume Queue</button>
-            <button type="button" id="cancel-queued-btn" class="danger">Cancel Queued</button>
-          </div>
-          <p id="queue-summary" class="helper-text">Queue status: loading...</p>
-        </form>
-        <details class="module-panel" open>
-          <summary>Collaborative Runs</summary>
-          <label for="collab-prompt">Shared Objective</label>
-          <textarea
-            id="collab-prompt"
-            name="collabPrompt"
-            rows="3"
-            placeholder="Design, implement, and verify a health-check endpoint."
-          ></textarea>
+          <label for="task-depends-on">Depends On (comma-separated IDs)</label>
+          <input id="task-depends-on" name="dependsOn" type="text" />
           <label for="collab-roles">Roles (comma-separated)</label>
-          <input
-            id="collab-roles"
-            name="collabRoles"
-            type="text"
-            value="planner,executor,verifier"
-            placeholder="planner,executor,verifier"
-          />
-          <label for="collab-template">Specialized Template</label>
-          <select id="collab-template" name="collabTemplate">
-            <option value="">Loading templates...</option>
-          </select>
-          <div class="button-row">
-            <button type="button" id="queue-collab-btn" class="secondary">Queue Collaborative Run</button>
-            <button type="button" id="queue-specialized-collab-btn" class="secondary">Queue Specialized Run</button>
-          </div>
+          <input id="collab-roles" name="collabRoles" type="text" value="planner,executor,verifier" />
+        </div>
+
+        <!-- ── ADVANCED PANELS (fully hidden unless dev mode) ── -->
+        <details class="module-panel" data-advanced="true">
+          <summary>Collaborative Run Details</summary>
           <pre id="collab-output">No collaborative run queued.</pre>
           <ul id="collab-runs" class="list-reset"></ul>
           <pre id="collab-run-output">No collaborative run selected.</pre>
           <label for="collab-feedback">Run Feedback</label>
-          <textarea
-            id="collab-feedback"
-            name="collabFeedback"
-            rows="3"
-            placeholder="Add feedback for the selected run."
-          ></textarea>
+          <textarea id="collab-feedback" name="collabFeedback" rows="2"></textarea>
           <div class="button-row">
-            <button type="button" id="send-run-feedback-btn" class="secondary" disabled>Log Run Feedback</button>
-            <button type="button" id="self-heal-run-btn" class="secondary" disabled>Self-Heal Run</button>
+            <button type="button" id="send-run-feedback-btn" class="secondary small" disabled>Log Feedback</button>
+            <button type="button" id="self-heal-run-btn" class="secondary small" disabled>Self-Heal</button>
           </div>
         </details>
 
         <details class="module-panel" data-advanced="true">
-          <summary>Plugin Registry & Marketplace</summary>
-          <label for="plugin-manifest">Plugin Manifest (JSON)</label>
-          <textarea
-            id="plugin-manifest"
-            name="pluginManifest"
-            rows="6"
-            placeholder='{"id":"qa-pack","name":"QA Pack","contributions":{"models":[{"id":"qa-sim-1","provider":"custom"}],"templates":[{"id":"qa-pass","label":"QA Pass","roles":["planner","executor","tester","verifier"]}]}}'
-          ></textarea>
+          <summary>Workspace Explorer</summary>
+          <input id="workspace-path" type="text" value="D:/tmp" />
           <div class="button-row">
-            <button type="button" id="register-plugin-btn" class="secondary">Register Plugin</button>
-            <button type="button" id="refresh-plugins-btn" class="secondary">Refresh Plugins</button>
+            <button type="button" id="workspace-list-btn" class="secondary small">List</button>
+            <button type="button" id="workspace-read-btn" class="secondary small">Read</button>
+            <button type="button" id="workspace-save-btn" class="secondary small">Save</button>
+          </div>
+          <textarea id="workspace-edit-content" rows="5" placeholder="File content..."></textarea>
+          <div id="workspace-editor-host" class="code-editor-host" aria-hidden="true"></div>
+          <pre id="workspace-output"></pre>
+        </details>
+
+        <details class="module-panel" data-advanced="true">
+          <summary>Edit Proposals</summary>
+          <input id="edit-path" type="text" value="D:/tmp/example.txt" />
+          <input id="edit-summary" type="text" placeholder="Summary of change" />
+          <textarea id="edit-content" rows="4"></textarea>
+          <div id="edit-editor-host" class="code-editor-host" aria-hidden="true"></div>
+          <div class="button-row">
+            <button type="button" id="create-edit-btn" class="secondary small">Create</button>
+            <button type="button" id="refresh-edits-btn" class="secondary small">Refresh</button>
+            <button type="button" id="apply-edit-btn" class="secondary small" disabled>Apply</button>
+            <button type="button" id="revert-edit-btn" class="secondary small" disabled>Revert</button>
+            <button type="button" id="reject-edit-btn" class="danger small" disabled>Reject</button>
+          </div>
+          <ul id="edit-list" class="list-reset"></ul>
+          <pre id="edit-output"></pre>
+        </details>
+
+        <details class="module-panel" data-advanced="true">
+          <summary>Plugin Registry</summary>
+          <textarea id="plugin-manifest" rows="4" placeholder='{"id":"my-plugin",...}'></textarea>
+          <div class="button-row">
+            <button type="button" id="register-plugin-btn" class="secondary small">Register</button>
+            <button type="button" id="refresh-plugins-btn" class="secondary small">Refresh</button>
           </div>
           <ul id="plugin-list" class="list-reset"></ul>
           <div class="button-row">
-            <button type="button" id="update-plugin-btn" class="secondary" disabled>Update Selected</button>
-            <button type="button" id="healthcheck-plugin-btn" class="secondary" disabled>Healthcheck Selected</button>
-            <button type="button" id="enable-plugin-btn" class="secondary" disabled>Enable Selected</button>
-            <button type="button" id="disable-plugin-btn" class="secondary" disabled>Disable Selected</button>
-            <button type="button" id="remove-plugin-btn" class="danger" disabled>Remove Selected</button>
+            <button type="button" id="update-plugin-btn" class="secondary small" disabled>Update</button>
+            <button type="button" id="healthcheck-plugin-btn" class="secondary small" disabled>Healthcheck</button>
+            <button type="button" id="enable-plugin-btn" class="secondary small" disabled>Enable</button>
+            <button type="button" id="disable-plugin-btn" class="secondary small" disabled>Disable</button>
+            <button type="button" id="remove-plugin-btn" class="danger small" disabled>Remove</button>
           </div>
-          <pre id="plugin-output">No plugin selected.</pre>
-          <label for="plugin-marketplace-query">Search Marketplace (optional)</label>
-          <input
-            id="plugin-marketplace-query"
-            name="pluginMarketplaceQuery"
-            type="text"
-            placeholder="qa, review, starter"
-          />
-          <label for="plugin-marketplace-import-url">Import Manifest URL (optional)</label>
-          <input
-            id="plugin-marketplace-import-url"
-            name="pluginMarketplaceImportUrl"
-            type="text"
-            placeholder="https://example.com/plugin-manifest.json"
-          />
-          <label class="checkbox-label" for="plugin-marketplace-update-existing">
-            <input id="plugin-marketplace-update-existing" name="pluginMarketplaceUpdateExisting" type="checkbox" />
-            Update existing plugin on install
+          <pre id="plugin-output"></pre>
+          <input id="plugin-marketplace-query" type="text" placeholder="Search marketplace..." />
+          <input id="plugin-marketplace-import-url" type="text" placeholder="Import URL..." />
+          <label class="switch-label" style="margin:0.4rem 0;font-weight:normal">
+            <input id="plugin-marketplace-update-existing" type="checkbox" style="display:inline-block;width:auto" />
+            Update existing on install
           </label>
           <div class="button-row">
-            <button type="button" id="refresh-plugin-marketplace-btn" class="secondary">Refresh Marketplace</button>
-            <button type="button" id="import-plugin-marketplace-btn" class="secondary">Import URL</button>
-            <button type="button" id="install-marketplace-plugin-btn" class="secondary" disabled>Install Selected</button>
+            <button type="button" id="refresh-plugin-marketplace-btn" class="secondary small">Refresh
+              Marketplace</button>
+            <button type="button" id="import-plugin-marketplace-btn" class="secondary small">Import URL</button>
+            <button type="button" id="install-marketplace-plugin-btn" class="secondary small" disabled>Install</button>
           </div>
           <ul id="plugin-marketplace-list" class="list-reset"></ul>
-          <pre id="plugin-marketplace-output">No marketplace plugin selected.</pre>
+          <pre id="plugin-marketplace-output"></pre>
         </details>
 
         <details class="module-panel" data-advanced="true">
           <summary>Model Playground</summary>
-          <label for="model-test-prompt">Prompt</label>
-          <textarea
-            id="model-test-prompt"
-            name="modelTestPrompt"
-            rows="3"
-            placeholder="Summarize this repository architecture in 5 bullets."
-          ></textarea>
+          <textarea id="model-test-prompt" rows="3" placeholder="Test prompt..."></textarea>
           <div class="button-row">
-            <button type="button" id="model-test-btn" class="secondary">Run Model Test</button>
+            <button type="button" id="model-test-btn" class="secondary small">Run</button>
           </div>
-          <pre id="model-test-output">No model test yet.</pre>
+          <pre id="model-test-output"></pre>
         </details>
 
         <details class="module-panel" data-advanced="true">
           <summary>Audit Export</summary>
           <div class="button-row">
-            <button type="button" id="audit-json-btn" class="secondary">Load Audit JSON</button>
-            <button type="button" id="audit-md-btn" class="secondary">Load Audit Markdown</button>
+            <button type="button" id="audit-json-btn" class="secondary small">JSON</button>
+            <button type="button" id="audit-md-btn" class="secondary small">Markdown</button>
           </div>
-          <pre id="audit-output">No audit export loaded.</pre>
-        </details>
-
-        <details class="module-panel" data-advanced="true">
-          <summary>Workspace Explorer</summary>
-          <label for="workspace-path">Path</label>
-          <input id="workspace-path" name="workspacePath" type="text" value="/tmp" placeholder="/tmp" />
-          <div class="button-row">
-            <button type="button" id="workspace-list-btn" class="secondary">List Directory</button>
-            <button type="button" id="workspace-read-btn" class="secondary">Read File</button>
-            <button type="button" id="workspace-save-btn" class="secondary">Save File</button>
-          </div>
-          <label for="workspace-edit-content">File Content</label>
-          <textarea
-            id="workspace-edit-content"
-            name="workspaceEditContent"
-            rows="8"
-            placeholder="Use Read File to load content, edit here, then Save File."
-          ></textarea>
-          <div id="workspace-editor-host" class="code-editor-host" aria-hidden="true"></div>
-          <pre id="workspace-output">No workspace query yet.</pre>
-        </details>
-
-        <details class="module-panel" data-advanced="true">
-          <summary>Edit Proposals</summary>
-          <label for="edit-path">Path</label>
-          <input id="edit-path" name="editPath" type="text" value="/tmp/example.txt" placeholder="/tmp/example.txt" />
-          <label for="edit-summary">Summary (optional)</label>
-          <input
-            id="edit-summary"
-            name="editSummary"
-            type="text"
-            placeholder="Explain what this edit changes"
-          />
-          <label for="edit-content">Proposed Content</label>
-          <textarea
-            id="edit-content"
-            name="editContent"
-            rows="6"
-            placeholder="Write full file content for proposal."
-          ></textarea>
-          <div id="edit-editor-host" class="code-editor-host" aria-hidden="true"></div>
-          <div class="button-row">
-            <button type="button" id="create-edit-btn" class="secondary">Create Proposal</button>
-            <button type="button" id="refresh-edits-btn" class="secondary">Refresh Proposals</button>
-            <button type="button" id="apply-edit-btn" class="secondary" disabled>Apply Selected</button>
-            <button type="button" id="revert-edit-btn" class="secondary" disabled>Revert Selected</button>
-            <button type="button" id="reject-edit-btn" class="danger" disabled>Reject Selected</button>
-          </div>
-          <ul id="edit-list" class="list-reset"></ul>
-          <pre id="edit-output">No edit proposal selected.</pre>
+          <pre id="audit-output"></pre>
         </details>
 
         <details class="module-panel" data-advanced="true">
           <summary>Build Slice Tasks</summary>
-          <p class="helper-text">Queue concrete tasks that map to the current local roadmap slices.</p>
           <ul id="slice-task-list" class="list-reset"></ul>
-          <div class="button-row">
-            <button type="button" id="queue-slice-batch-btn" class="secondary">Queue Next 3 Slices</button>
-          </div>
+          <button type="button" id="queue-slice-batch-btn" class="secondary small">Queue Next 3 Slices</button>
         </details>
 
         <details class="module-panel" data-advanced="true">
           <summary>Runtime Diagnostics</summary>
-          <p class="helper-text">
-            Lightweight runtime diagnostics from the orchestrator container.
-            Use <code>scripts/vps_connect.ps1 -Status</code> for host-level process checks (for example, Ollama).
-          </p>
           <div class="button-row">
-            <button type="button" id="runtime-diagnostics-btn" class="secondary">Refresh Runtime Diagnostics</button>
-            <button type="button" id="reliability-gates-btn" class="secondary">Refresh Reliability Gates</button>
-            <button type="button" id="restore-drill-btn" class="secondary">Run Restore Drill</button>
-            <button type="button" id="replay-consistency-btn" class="secondary">Run Replay Consistency</button>
-            <button type="button" id="run-all-reliability-btn" class="primary">Run All Reliability Checks</button>
+            <button type="button" id="runtime-diagnostics-btn" class="secondary small">Diagnostics</button>
+            <button type="button" id="reliability-gates-btn" class="secondary small">Gates</button>
+            <button type="button" id="restore-drill-btn" class="secondary small">Restore Drill</button>
+            <button type="button" id="replay-consistency-btn" class="secondary small">Replay Check</button>
+            <button type="button" id="run-all-reliability-btn" class="secondary small">Run All</button>
           </div>
-          <pre id="runtime-diagnostics-output">No runtime diagnostics loaded.</pre>
-          <pre id="reliability-gates-output">No reliability gates loaded.</pre>
-          <pre id="restore-drill-output">No restore drill run yet. Click "Run Restore Drill" to verify task replay capability.</pre>
-          <pre id="replay-consistency-output">No replay consistency check yet. Click "Run Replay Consistency" to verify replay determinism.</pre>
+          <pre id="runtime-diagnostics-output"></pre>
+          <pre id="reliability-gates-output"></pre>
+          <pre id="restore-drill-output"></pre>
+          <pre id="replay-consistency-output"></pre>
         </details>
 
         <details class="module-panel" data-advanced="true">
           <summary>Raw System Snapshot</summary>
-          <p class="helper-text">Detailed JSON for troubleshooting and diagnostics.</p>
-          <pre id="status" aria-live="polite">Loading status...</pre>
+          <pre id="status" aria-live="polite">Loading...</pre>
         </details>
-      </section>
-      <section class="panel queue">
-        <h2>Task Queue</h2>
-        <p class="helper-text">Pick any task to inspect details, timeline, and artifacts.</p>
-        <div id="queue-status-pills" class="queue-status-pills" aria-live="polite"></div>
-        <div id="quick-filter-row" class="quick-filter-row" role="group" aria-label="Quick status filters">
-          <button type="button" class="status-chip is-active" data-status="all" aria-pressed="true">All</button>
-          <button type="button" class="status-chip" data-status="queued" aria-pressed="false">Queued</button>
-          <button type="button" class="status-chip" data-status="planning" aria-pressed="false">Planning</button>
-          <button type="button" class="status-chip" data-status="running" aria-pressed="false">Running</button>
-          <button type="button" class="status-chip" data-status="completed" aria-pressed="false">Completed</button>
-          <button type="button" class="status-chip" data-status="failed" aria-pressed="false">Failed</button>
-          <button type="button" class="status-chip" data-status="cancelled" aria-pressed="false">Cancelled</button>
+
+        <!-- Always-hidden expand panels (unused but referenced) -->
+        <span id="expand-panels-btn" style="display:none"></span>
+      </div>
+    </section>
+
+    <!-- ═══════════ COLUMN 2: TASK QUEUE ═══════════ -->
+    <section class="panel queue">
+      <div class="panel-head">
+        <h2>Operations</h2>
+        <div class="subtitle">Running and historical tasks</div>
+      </div>
+
+      <!-- Filter chips -->
+      <div id="quick-filter-row" class="quick-filter-row" role="group" aria-label="Quick status filters">
+        <button type="button" class="status-chip is-active" data-status="all" aria-pressed="true">All</button>
+        <button type="button" class="status-chip" data-status="queued" aria-pressed="false">Queued</button>
+        <button type="button" class="status-chip" data-status="planning" aria-pressed="false">Planning</button>
+        <button type="button" class="status-chip" data-status="running" aria-pressed="false">Running</button>
+        <button type="button" class="status-chip" data-status="completed" aria-pressed="false">Done</button>
+        <button type="button" class="status-chip" data-status="failed" aria-pressed="false">Failed</button>
+        <button type="button" class="status-chip" data-status="cancelled" aria-pressed="false">Cancelled</button>
+      </div>
+
+      <!-- Search + hidden select (required by app.js) -->
+      <div style="padding:0.5rem 1rem; border-bottom:1px solid var(--border)">
+        <div class="search-row">
+          <input id="task-filter-query" name="taskFilterQuery" type="text" placeholder="Search by prompt or ID…"
+            style="margin:0" />
+          <button type="button" id="clear-task-search-btn" class="secondary small" disabled>✕</button>
         </div>
-        <label for="task-filter-status">Status Filter</label>
-        <select id="task-filter-status" name="taskFilterStatus">
+        <!-- Hidden but required by app.js -->
+        <select id="task-filter-status" name="taskFilterStatus" style="display:none">
           <option value="all">All</option>
           <option value="queued">Queued</option>
           <option value="planning">Planning</option>
@@ -301,32 +256,65 @@
           <option value="failed">Failed</option>
           <option value="cancelled">Cancelled</option>
         </select>
-        <label for="task-filter-query">Search</label>
-        <div class="search-row">
-          <input id="task-filter-query" name="taskFilterQuery" type="text" placeholder="task id or prompt text" />
-          <button type="button" id="clear-task-search-btn" class="secondary small" disabled>Clear</button>
-        </div>
+      </div>
+
+      <!-- Status pill summary -->
+      <div id="queue-status-pills" class="queue-status-pills" aria-live="polite"></div>
+
+      <div class="panel-body" style="padding:0.5rem 0.75rem">
         <ul id="tasks" class="list-reset"></ul>
-      </section>
-      <section class="panel details">
-        <h2>Task Details</h2>
-        <p class="helper-text">Live execution context for the selected task.</p>
-        <p id="selected-task-label">Select a task to inspect details.</p>
-        <div class="button-row">
-          <button type="button" id="replay-task-btn" class="secondary" disabled>Replay Selected</button>
-          <button type="button" id="cancel-task-btn" class="danger" disabled>Cancel Selected</button>
+      </div>
+    </section>
+
+    <!-- ═══════════ COLUMN 3: INTELLIGENCE ═══════════ -->
+    <section class="panel details">
+      <div class="panel-head">
+        <h2>Intelligence</h2>
+        <div class="subtitle">Artifacts, timeline and live events</div>
+      </div>
+      <div class="panel-body">
+
+        <p id="selected-task-label" class="dim-text">Select an operation to view details</p>
+
+        <div id="task-actions-row" style="display:none" class="button-row">
+          <button type="button" id="replay-task-btn" class="secondary small" disabled>↺ Replay</button>
+          <button type="button" id="cancel-task-btn" class="danger small" disabled>✕ Cancel</button>
         </div>
-        <h3>Timeline</h3>
-        <ul id="timeline"></ul>
-        <h3>Artifacts</h3>
-        <ul id="artifacts"></ul>
-        <h3>Event Stream</h3>
-        <div class="button-row">
-          <button type="button" id="clear-events-btn" class="secondary">Clear Events</button>
+
+        <p class="details-section-head" style="margin-top:1rem">Live Agent Console</p>
+        <div class="agent-console">
+          <div class="console-toolbar">
+            <span id="console-status" class="console-status-badge">idle</span>
+            <button type="button" id="clear-console-btn" class="secondary small">Clear</button>
+          </div>
+          <div id="agent-console-output" class="agent-console-output"><span class="console-idle">Waiting for agent
+              activity…</span></div>
         </div>
-        <ul id="events"></ul>
-      </section>
-    </main>
-    <script src="/app.js"></script>
-  </body>
+
+        <p class="details-section-head">Execution Timeline</p>
+        <ul id="timeline" class="timeline-v2 list-reset"></ul>
+
+        <p class="details-section-head">Produced Artifacts</p>
+        <ul id="artifacts" class="list-reset"></ul>
+
+        <p class="details-section-head">Event Stream</p>
+        <div class="button-row">
+          <button type="button" id="clear-events-btn" class="secondary small">Clear</button>
+        </div>
+        <ul id="events" class="list-reset"></ul>
+
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Wire "Dev Tools" button to toggle advanced mode on <body>
+    document.getElementById('collapse-advanced-btn').addEventListener('click', function () {
+      document.body.classList.toggle('advanced-mode');
+      this.textContent = document.body.classList.contains('advanced-mode') ? 'Simple Mode' : 'Dev Tools';
+    });
+  </script>
+  <script src="/app.js"></script>
+</body>
+
 </html>
