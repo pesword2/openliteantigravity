@@ -124,3 +124,8 @@ ead_ledger\) on the orchestrator via SSE.
 - **Description**: Upgraded the standalone browser proxy service (\services/browser\) to a fully managed Docker container running Node 22 on Debian Bookworm with native Playwright dependencies integrated directly into \docker-compose.yml\.
 - **Verification**: Evaluated \http://localhost:14200/health\ inside the VPS; service deployed and port successfully hooked.
 - **Date**: 2026-02-24
+
+### WP 4.8 - Interactive Browser Tools inside Neural OS MCP
+- **Description**: Enabled the agent to fully operate the headless DOM using Neural OS MCP endpoints. Exposed \rowser_navigate\, \rowser_click\, and \rowser_screenshot\ returning standard text or \image/png\ base64 blocks compatible with Anthropic/OpenAI APIs.
+- **Verification**: Verified tools injected into the active \mcpServer\ object, mapping payload forwards to \BROWSER_SERVICE_URL\.
+- **Date**: 2026-02-24

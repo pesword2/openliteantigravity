@@ -6973,6 +6973,45 @@ mcpServer.tool('write_file', 'Safely write content to a file in the AEI workspac
   }
 });
 
+const BROWSER_ENDPOINT = process.env.BROWSER_SERVICE_URL || 'http://browser:14200';
+
+mcpServer.tool('browser_navigate', 'Instruct the AEI headless browser proxy to navigate to a URL and return its text content', {
+  url: z.string().describe('The fully qualified URL to load')
+}, async (args) => {
+  try {
+    const navReq = await fetch(`${BROWSER_ENDPOINT}/v1/browser/navigate`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: args.url })
+    });
+    if (!navReq.ok) return { content: [{ type: 'text', text: `Browser Error: ${navReq.statusText}` }] };
+
+    const contentReq = await fetch(`${BROWSER_ENDPOINT}/v1/browser/content`);
+    const data = await contentReq.json();
+    return { content: [{ type: 'text', text: `Successfully navigated to ${data.url}.\n\nText Content Extract:\n${data.text.substring(0, 10000)}` }] };
+  } catch (err) { return { content: [{ type: 'text', text: `Failed browser navigation: ${err.message}` }] }; }
+});
+
+mcpServer.tool('browser_click', 'Instruct the AEI headless browser to click a CSS selector', {
+  selector: z.string().describe('CSS selector to click')
+}, async (args) => {
+  try {
+    const res = await fetch(`${BROWSER_ENDPOINT}/v1/browser/click`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ selector: args.selector })
+    });
+    const data = await res.json();
+    return { content: [{ type: 'text', text: res.ok ? 'Click successful.' : `Error: ${data.error}` }] };
+  } catch (err) { return { content: [{ type: 'text', text: `Click failed: ${err.message}` }] }; }
+});
+
+mcpServer.tool('browser_screenshot', 'Take a full-page screenshot of the current active browser tab', {}, async () => {
+  try {
+    const res = await fetch(`${BROWSER_ENDPOINT}/v1/browser/screenshot`, { method: 'POST' });
+    if (!res.ok) return { content: [{ type: 'text', text: `Screenshot failed: ${res.statusText}` }] };
+    const buffer = await res.arrayBuffer();
+    const b64 = Buffer.from(buffer).toString('base64');
+    return { content: [{ type: 'image', data: b64, mimeType: 'image/png' }] };
+  } catch (err) { return { content: [{ type: 'text', text: `Screenshot failed: ${err.message}` }] }; }
+});
+
 const mcpTransports = new Map();
 
 const server = http.createServer(async (req, res) => {
