@@ -45,7 +45,7 @@ const allowInsecureMarketplaceHttp = parseBooleanEnv(process.env.ALLOW_INSECURE_
 const allowedWorkspaceRoots = parseWorkspaceRoots(process.env.ALLOWED_WORKSPACE_ROOTS || '/tmp,/app');
 const corsAllowedOrigins = parseCorsAllowedOrigins(
   process.env.CORS_ALLOWED_ORIGINS ||
-    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:3100,http://127.0.0.1:3100,http://localhost:13100,http://127.0.0.1:13100'
+  'http://localhost:3000,http://127.0.0.1:3000,http://localhost:3100,http://127.0.0.1:3100,http://localhost:13100,http://127.0.0.1:13100'
 );
 const allowAllCorsOrigins = corsAllowedOrigins.has('*');
 const defaultWorkingDirectory = resolveDefaultWorkingDirectory(
@@ -208,7 +208,7 @@ function captureCpuSnapshot() {
 function buildExtendedDiagnostics() {
   const memorySnapshot = captureMemorySnapshot();
   const cpuSnapshot = captureCpuSnapshot();
-  
+
   // Calculate latency statistics
   const latencies = diagnosticsMetrics.apiLatencies;
   const sortedLatencies = latencies.map(l => l.latencyMs).sort((a, b) => a - b);
@@ -2054,18 +2054,18 @@ function buildPluginSummary(plugin) {
   const marketplace =
     plugin && plugin.marketplace && typeof plugin.marketplace === 'object'
       ? {
-          marketplaceId:
-            typeof plugin.marketplace.marketplaceId === 'string' ? plugin.marketplace.marketplaceId : '',
-          source: typeof plugin.marketplace.source === 'string' ? plugin.marketplace.source : '',
-          sourceUrl: typeof plugin.marketplace.sourceUrl === 'string' ? plugin.marketplace.sourceUrl : '',
-          manifestChecksumSha256:
-            typeof plugin.marketplace.manifestChecksumSha256 === 'string'
-              ? plugin.marketplace.manifestChecksumSha256
-              : '',
-          installedAt: isIsoDate(plugin.marketplace.installedAt) ? plugin.marketplace.installedAt : null,
-          updatedAt: isIsoDate(plugin.marketplace.updatedAt) ? plugin.marketplace.updatedAt : null,
-          lastAction: typeof plugin.marketplace.lastAction === 'string' ? plugin.marketplace.lastAction : '',
-        }
+        marketplaceId:
+          typeof plugin.marketplace.marketplaceId === 'string' ? plugin.marketplace.marketplaceId : '',
+        source: typeof plugin.marketplace.source === 'string' ? plugin.marketplace.source : '',
+        sourceUrl: typeof plugin.marketplace.sourceUrl === 'string' ? plugin.marketplace.sourceUrl : '',
+        manifestChecksumSha256:
+          typeof plugin.marketplace.manifestChecksumSha256 === 'string'
+            ? plugin.marketplace.manifestChecksumSha256
+            : '',
+        installedAt: isIsoDate(plugin.marketplace.installedAt) ? plugin.marketplace.installedAt : null,
+        updatedAt: isIsoDate(plugin.marketplace.updatedAt) ? plugin.marketplace.updatedAt : null,
+        lastAction: typeof plugin.marketplace.lastAction === 'string' ? plugin.marketplace.lastAction : '',
+      }
       : null;
 
   return {
@@ -2094,22 +2094,22 @@ function buildPluginDetail(plugin) {
       models:
         plugin.contributions && Array.isArray(plugin.contributions.models)
           ? plugin.contributions.models.map((entry) => ({
-              id: entry.id,
-              label: entry.label,
-              provider: entry.provider,
-              pluginId: plugin.id,
-            }))
+            id: entry.id,
+            label: entry.label,
+            provider: entry.provider,
+            pluginId: plugin.id,
+          }))
           : [],
       templates:
         plugin.contributions && Array.isArray(plugin.contributions.templates)
           ? plugin.contributions.templates.map((entry) => ({
-              id: entry.id,
-              key: entry.key,
-              label: entry.label,
-              description: entry.description,
-              roles: normalizeCollaborativeRunRoles(entry.roles),
-              pluginId: plugin.id,
-            }))
+            id: entry.id,
+            key: entry.key,
+            label: entry.label,
+            description: entry.description,
+            roles: normalizeCollaborativeRunRoles(entry.roles),
+            pluginId: plugin.id,
+          }))
           : [],
     },
   };
@@ -2147,9 +2147,9 @@ function buildPluginHealthSummary(pluginId) {
     counts:
       record.counts && typeof record.counts === 'object'
         ? {
-            models: Number.isInteger(record.counts.models) ? record.counts.models : 0,
-            templates: Number.isInteger(record.counts.templates) ? record.counts.templates : 0,
-          }
+          models: Number.isInteger(record.counts.models) ? record.counts.models : 0,
+          templates: Number.isInteger(record.counts.templates) ? record.counts.templates : 0,
+        }
         : { models: 0, templates: 0 },
   };
 }
@@ -2374,30 +2374,30 @@ function buildPluginMarketplaceSummary(entry) {
   const installedPlugin = getPluginById(entry.manifest.id);
   const installedMarketplaceId =
     installedPlugin &&
-    installedPlugin.marketplace &&
-    typeof installedPlugin.marketplace.marketplaceId === 'string'
+      installedPlugin.marketplace &&
+      typeof installedPlugin.marketplace.marketplaceId === 'string'
       ? installedPlugin.marketplace.marketplaceId
       : '';
   const installedAt =
     installedPlugin &&
-    installedPlugin.marketplace &&
-    isIsoDate(installedPlugin.marketplace.installedAt)
+      installedPlugin.marketplace &&
+      isIsoDate(installedPlugin.marketplace.installedAt)
       ? installedPlugin.marketplace.installedAt
       : null;
   const installedMarketplaceUpdatedAt =
     installedPlugin &&
-    installedPlugin.marketplace &&
-    isIsoDate(installedPlugin.marketplace.updatedAt)
+      installedPlugin.marketplace &&
+      isIsoDate(installedPlugin.marketplace.updatedAt)
       ? installedPlugin.marketplace.updatedAt
       : null;
   const installedViaMarketplace = Boolean(installedPlugin && installedMarketplaceId === entry.marketplaceId);
   const installedVersion = installedPlugin && typeof installedPlugin.version === 'string' ? installedPlugin.version : '';
   const updateAvailable = Boolean(
     installedPlugin &&
-      installedVersion &&
-      entry.manifest &&
-      typeof entry.manifest.version === 'string' &&
-      installedVersion !== entry.manifest.version
+    installedVersion &&
+    entry.manifest &&
+    typeof entry.manifest.version === 'string' &&
+    installedVersion !== entry.manifest.version
   );
   const installState = !installedPlugin
     ? 'available'
@@ -2721,8 +2721,8 @@ function installPluginFromMarketplace(payload) {
         : hashContent(JSON.stringify(entry.manifest || {})),
     installedAt:
       existing &&
-      existing.marketplace &&
-      isIsoDate(existing.marketplace.installedAt)
+        existing.marketplace &&
+        isIsoDate(existing.marketplace.installedAt)
         ? existing.marketplace.installedAt
         : now,
     updatedAt: now,
@@ -2739,19 +2739,19 @@ function installPluginFromMarketplace(payload) {
       models:
         entry.manifest.contributions && Array.isArray(entry.manifest.contributions.models)
           ? entry.manifest.contributions.models.map((model) => ({
-              id: model.id,
-              label: model.label,
-              provider: model.provider,
-            }))
+            id: model.id,
+            label: model.label,
+            provider: model.provider,
+          }))
           : [],
       templates:
         entry.manifest.contributions && Array.isArray(entry.manifest.contributions.templates)
           ? entry.manifest.contributions.templates.map((template) => ({
-              id: template.key || template.id,
-              label: template.label,
-              description: template.description,
-              roles: normalizeCollaborativeRunRoles(template.roles),
-            }))
+            id: template.key || template.id,
+            label: template.label,
+            description: template.description,
+            roles: normalizeCollaborativeRunRoles(template.roles),
+          }))
           : [],
     },
   };
@@ -3187,24 +3187,23 @@ function selfHealCollaborativeRun(run, payload) {
     typeof values.prompt === 'string' && values.prompt.trim()
       ? values.prompt.trim()
       : [
-          `[collab:${run.id}] [role:${role}] [self-heal] [step:${stepIndex + 1}/${totalSteps}]`,
-          '',
-          collaborativeRoleInstructions[role] || '',
-          '',
-          'Shared Objective:',
-          run.prompt,
-          '',
-          `Recovery Target Task: ${failedTask.id}`,
-          `Recovery Target Status: ${failedTask.status}`,
-          `Recovery Failure Summary: ${
-            failedTask.result && typeof failedTask.result.summary === 'string'
-              ? failedTask.result.summary
-              : '(no summary)'
-          }`,
-          '',
-          'Recovery Goal:',
-          'Produce a corrected follow-up implementation and explicit verification notes.',
-        ].join('\n');
+        `[collab:${run.id}] [role:${role}] [self-heal] [step:${stepIndex + 1}/${totalSteps}]`,
+        '',
+        collaborativeRoleInstructions[role] || '',
+        '',
+        'Shared Objective:',
+        run.prompt,
+        '',
+        `Recovery Target Task: ${failedTask.id}`,
+        `Recovery Target Status: ${failedTask.status}`,
+        `Recovery Failure Summary: ${failedTask.result && typeof failedTask.result.summary === 'string'
+          ? failedTask.result.summary
+          : '(no summary)'
+        }`,
+        '',
+        'Recovery Goal:',
+        'Produce a corrected follow-up implementation and explicit verification notes.',
+      ].join('\n');
 
   const taskResult = buildTask({
     prompt: healPrompt,
@@ -4742,6 +4741,7 @@ function runSingleCommand(taskId, command, timeoutMs, workingDirectory) {
     const child = spawn(executable, args, {
       cwd: workingDirectory,
       env: commandEnv,
+      shell: process.platform === 'win32',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
@@ -4898,26 +4898,26 @@ async function startTaskExecution(task) {
     const commandResults = Array.isArray(error.commandResults) ? error.commandResults : [];
     const checks = commandResults.length
       ? commandResults.map((result) => ({
-          name: `command:${result.command}`,
-          status: result.code === 0 ? 'pass' : 'fail',
-          code: result.code,
-          timedOut: result.timedOut,
-        }))
+        name: `command:${result.command}`,
+        status: result.code === 0 ? 'pass' : 'fail',
+        code: result.code,
+        timedOut: result.timedOut,
+      }))
       : [{ name: 'execution', status: 'fail', note: error.message }];
 
     const executionLog = commandResults.length
       ? commandResults
-          .map((result) =>
-            [
-              `cwd: ${task.workingDirectory}`,
-              `$ ${result.command}`,
-              result.stdout ? `stdout:\n${result.stdout}` : 'stdout: (empty)',
-              result.stderr ? `stderr:\n${result.stderr}` : 'stderr: (empty)',
-              `exitCode: ${result.code}`,
-              `timedOut: ${result.timedOut}`,
-            ].join('\n')
-          )
-          .join('\n\n')
+        .map((result) =>
+          [
+            `cwd: ${task.workingDirectory}`,
+            `$ ${result.command}`,
+            result.stdout ? `stdout:\n${result.stdout}` : 'stdout: (empty)',
+            result.stderr ? `stderr:\n${result.stderr}` : 'stderr: (empty)',
+            `exitCode: ${result.code}`,
+            `timedOut: ${result.timedOut}`,
+          ].join('\n')
+        )
+        .join('\n\n')
       : `Execution error: ${error.message}`;
 
     addArtifact(task, 'execution-log', 'Execution Log', executionLog);
@@ -5269,15 +5269,15 @@ function recordReliabilityCheck(gatesResult) {
     gateStatuses: gatesResult.gates.map(g => ({ id: g.id, status: g.status })),
     metrics: gatesResult.metrics,
   };
-  
+
   reliabilityHistory.unshift(entry);
-  
+
   while (reliabilityHistory.length > maxReliabilityHistory) {
     reliabilityHistory.pop();
   }
 
   persistTasksSoon();
-  
+
   return entry;
 }
 
@@ -5299,7 +5299,7 @@ function startRecoverySmoke() {
 
   const drillId = randomUUID();
   const now = new Date().toISOString();
-  
+
   // Create a test task
   const drillTaskResult = buildTask({
     prompt: '[drill:smoke] Synthetic recovery smoke test task.',
@@ -5310,13 +5310,13 @@ function startRecoverySmoke() {
     dependsOn: [],
     commandTimeoutMs: defaultCommandTimeoutMs,
   });
-  
+
   if (drillTaskResult.error) {
     return { error: drillTaskResult.error, status: 400 };
   }
-  
+
   const drillTask = drillTaskResult.task;
-  
+
   const drillRun = {
     id: drillId,
     taskId: drillTask.id,
@@ -5330,10 +5330,10 @@ function startRecoverySmoke() {
       allPassed: false,
     },
   };
-  
+
   recoverySmokeRuns.unshift(drillRun);
   recoverySmokeRunsById.set(drillRun.id, drillRun);
-  
+
   while (recoverySmokeRuns.length > maxRecoverySmokeRuns) {
     const removed = recoverySmokeRuns.pop();
     if (removed) {
@@ -5342,10 +5342,10 @@ function startRecoverySmoke() {
   }
 
   persistTasksSoon();
-  
+
   // Run smoke test sequence
   trackRecoverySmoke(drillRun.id, drillTask.id);
-  
+
   return {
     drill: {
       id: drillRun.id,
@@ -5359,7 +5359,7 @@ function startRecoverySmoke() {
 function trackRecoverySmoke(drillId, taskId) {
   const drillRun = recoverySmokeRunsById.get(drillId);
   if (!drillRun) return;
-  
+
   const task = tasksById.get(taskId);
   if (!task) {
     drillRun.status = 'failed';
@@ -5367,32 +5367,32 @@ function trackRecoverySmoke(drillId, taskId) {
     persistTasksSoon();
     return;
   }
-  
+
   // Step 1: Test pause
   setTimeout(() => {
     const currentDrill = recoverySmokeRunsById.get(drillId);
     if (!currentDrill || currentDrill.status !== 'running') return;
-    
+
     // Pause the queue
     queuePaused = true;
     currentDrill.evidence.pauseTest = 'passed';
     persistTasksSoon();
-    
+
     // Step 2: Test resume after 500ms
     setTimeout(() => {
       const currentDrill2 = recoverySmokeRunsById.get(drillId);
       if (!currentDrill2 || currentDrill2.status !== 'running') return;
-      
+
       queuePaused = false;
       currentDrill2.evidence.resumeTest = 'passed';
       scheduleNextLifecycle();
       persistTasksSoon();
-      
+
       // Step 3: Test cancel after another 500ms
       setTimeout(() => {
         const currentDrill3 = recoverySmokeRunsById.get(drillId);
         if (!currentDrill3 || currentDrill3.status !== 'running') return;
-        
+
         const task3 = tasksById.get(taskId);
         if (task3 && task3.status !== 'completed') {
           cancelTask(task3);
@@ -5400,14 +5400,14 @@ function trackRecoverySmoke(drillId, taskId) {
         } else {
           currentDrill3.evidence.cancelTest = 'skipped (already completed)';
         }
-        
+
         // Determine overall pass/fail
-        const passed = currentDrill3.evidence.pauseTest === 'passed' && 
-                       currentDrill3.evidence.resumeTest === 'passed';
+        const passed = currentDrill3.evidence.pauseTest === 'passed' &&
+          currentDrill3.evidence.resumeTest === 'passed';
         currentDrill3.evidence.allPassed = passed;
         currentDrill3.status = passed ? 'completed' : 'failed';
         persistTasksSoon();
-        
+
       }, 500);
     }, 500);
   }, 500);
@@ -5417,7 +5417,7 @@ function getLatestRecoverySmoke() {
   if (!recoverySmokeRuns.length) {
     return { drill: null, message: 'No recovery smoke tests yet.' };
   }
-  
+
   const latest = recoverySmokeRuns[0];
   const evidenceLines = [
     `taskId: ${latest.evidence.taskId}`,
@@ -5426,7 +5426,7 @@ function getLatestRecoverySmoke() {
     `cancelTest: ${latest.evidence.cancelTest}`,
     `allPassed: ${latest.evidence.allPassed}`,
   ];
-  
+
   return {
     drill: {
       id: latest.id,
@@ -5445,10 +5445,10 @@ function trackReplayConsistency(drillId, sourceTaskId, replayTaskId) {
       clearInterval(checkInterval);
       return;
     }
-    
+
     const sourceTask = tasksById.get(sourceTaskId);
     const replayTask = tasksById.get(replayTaskId);
-    
+
     if (!sourceTask || !replayTask) {
       drillRun.status = 'failed';
       drillRun.evidence.replayStatus = 'task-not-found';
@@ -5457,7 +5457,7 @@ function trackReplayConsistency(drillId, sourceTaskId, replayTaskId) {
       clearInterval(checkInterval);
       return;
     }
-    
+
     // Check if replay task reached terminal status
     if (terminalTaskStatuses.has(replayTask.status)) {
       const sourceStatus = sourceTask.status;
@@ -5481,12 +5481,12 @@ function trackReplayConsistency(drillId, sourceTaskId, replayTaskId) {
       drillRun.evidence.artifactHashMatch = artifactHashMatch;
       drillRun.evidence.consistent = consistent;
       persistTasksSoon();
-      
+
       clearInterval(checkInterval);
       return;
     }
   }, 500);
-  
+
   // Timeout after 30 seconds
   setTimeout(() => {
     const drillRun = replayConsistencyRunsById.get(drillId);
@@ -5511,7 +5511,7 @@ function startRestoreDrill() {
 
   const drillId = randomUUID();
   const now = new Date().toISOString();
-  
+
   // Create a synthetic drill task with prompt marker [drill:restore]
   const drillTaskResult = buildTask({
     prompt: '[drill:restore] Synthetic restore drill task to verify task replay capability and persistence.',
@@ -5522,13 +5522,13 @@ function startRestoreDrill() {
     dependsOn: [],
     commandTimeoutMs: defaultCommandTimeoutMs,
   });
-  
+
   if (drillTaskResult.error) {
     return { error: drillTaskResult.error, status: 400 };
   }
-  
+
   const drillTask = drillTaskResult.task;
-  
+
   // Create drill run record
   const drillRun = {
     id: drillId,
@@ -5545,7 +5545,7 @@ function startRestoreDrill() {
       replayReady: false,
     },
   };
-  
+
   // Get initial taskStore info
   try {
     if (taskStorePath && fs.existsSync(taskStorePath)) {
@@ -5557,10 +5557,10 @@ function startRestoreDrill() {
   } catch (error) {
     // Keep defaults
   }
-  
+
   restoreDrillRuns.unshift(drillRun);
   restoreDrillRunsById.set(drillRun.id, drillRun);
-  
+
   // Trim old runs
   while (restoreDrillRuns.length > maxRestoreDrillRuns) {
     const removed = restoreDrillRuns.pop();
@@ -5570,10 +5570,10 @@ function startRestoreDrill() {
   }
 
   persistTasksSoon();
-  
+
   // Track progress asynchronously
   trackRestoreDrillProgress(drillRun.id, drillTask.id);
-  
+
   return {
     drill: {
       id: drillRun.id,
@@ -5591,7 +5591,7 @@ function trackRestoreDrillProgress(drillId, taskId) {
       clearInterval(checkInterval);
       return;
     }
-    
+
     const task = tasksById.get(taskId);
     if (!task) {
       drillRun.status = 'failed';
@@ -5600,12 +5600,12 @@ function trackRestoreDrillProgress(drillId, taskId) {
       clearInterval(checkInterval);
       return;
     }
-    
+
     // Check if task reached terminal status
     if (terminalTaskStatuses.has(task.status)) {
       drillRun.status = task.status === 'completed' ? 'completed' : (task.status === 'failed' ? 'failed' : 'cancelled');
       drillRun.evidence.terminalStatus = task.status;
-      
+
       // Check replay readiness
       drillRun.evidence.replayReady = terminalTaskStatuses.has(task.status);
       try {
@@ -5620,12 +5620,12 @@ function trackRestoreDrillProgress(drillId, taskId) {
         // Best-effort evidence refresh.
       }
       persistTasksSoon();
-      
+
       clearInterval(checkInterval);
       return;
     }
   }, 500);
-  
+
   // Timeout after 30 seconds
   setTimeout(() => {
     const drillRun = restoreDrillRunsById.get(drillId);
@@ -5676,9 +5676,9 @@ function getLatestRestoreDrill() {
       message: 'No restore drill runs yet.',
     };
   }
-  
+
   const latest = restoreDrillRuns[0];
-  
+
   // Build evidence lines
   const evidenceLines = [
     `taskId: ${latest.evidence.taskId}`,
@@ -5689,7 +5689,7 @@ function getLatestRestoreDrill() {
     `taskStoreUpdatedAt: ${latest.evidence.taskStoreUpdatedAt || '(none)'}`,
     `replayReady: ${latest.evidence.replayReady}`,
   ];
-  
+
   return {
     drill: {
       id: latest.id,
@@ -6114,18 +6114,18 @@ function buildPersistedReliabilityHistoryEntry(candidate) {
 
   const gateStatuses = Array.isArray(candidate.gateStatuses)
     ? candidate.gateStatuses
-        .map((entry) => {
-          if (!entry || typeof entry !== 'object') {
-            return null;
-          }
-          const id = typeof entry.id === 'string' ? entry.id : '';
-          const status = typeof entry.status === 'string' ? entry.status : '';
-          if (!id || !status) {
-            return null;
-          }
-          return { id, status };
-        })
-        .filter(Boolean)
+      .map((entry) => {
+        if (!entry || typeof entry !== 'object') {
+          return null;
+        }
+        const id = typeof entry.id === 'string' ? entry.id : '';
+        const status = typeof entry.status === 'string' ? entry.status : '';
+        if (!id || !status) {
+          return null;
+        }
+        return { id, status };
+      })
+      .filter(Boolean)
     : [];
 
   return {
@@ -6188,8 +6188,8 @@ function loadPersistedTasks() {
         updatedAt: isIsoDate(candidate.updatedAt) ? candidate.updatedAt : now,
         timeline: Array.isArray(candidate.timeline)
           ? candidate.timeline
-              .map((entry) => buildPersistedTimelineEntry(entry, 'loaded'))
-              .filter(Boolean)
+            .map((entry) => buildPersistedTimelineEntry(entry, 'loaded'))
+            .filter(Boolean)
           : [],
         artifacts: Array.isArray(candidate.artifacts)
           ? candidate.artifacts.map(buildPersistedArtifact).filter(Boolean)
@@ -6722,19 +6722,19 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 400, { error: 'No completed tasks available for replay consistency check.' });
       return;
     }
-    
+
     // Use the most recent completed task
     const sourceTask = completedTasks[0];
     const replayResult = replayTask(sourceTask, {});
-    
+
     if (replayResult.error) {
       sendJson(res, replayResult.status || 400, { error: replayResult.error });
       return;
     }
-    
+
     const drillId = randomUUID();
     const now = new Date().toISOString();
-    
+
     const drillRun = {
       id: drillId,
       sourceTaskId: sourceTask.id,
@@ -6754,11 +6754,11 @@ const server = http.createServer(async (req, res) => {
         consistent: false,
       },
     };
-    
+
     // Add to the runs array and Map
     replayConsistencyRuns.unshift(drillRun);
     replayConsistencyRunsById.set(drillRun.id, drillRun);
-    
+
     // Trim old runs
     while (replayConsistencyRuns.length > maxReplayConsistencyRuns) {
       const removed = replayConsistencyRuns.pop();
@@ -6768,10 +6768,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     persistTasksSoon();
-    
+
     // Track replay consistency
     trackReplayConsistency(drillId, sourceTask.id, replayResult.task.id);
-    
+
     sendJson(res, 202, {
       drill: {
         id: drillId,
@@ -6789,7 +6789,7 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 200, { drill: null, message: 'No replay consistency checks yet.' });
       return;
     }
-    
+
     const latest = replayConsistencyRuns[0];
     const evidenceLines = [
       `sourceTaskId: ${latest.evidence.sourceTaskId}`,
@@ -6803,7 +6803,7 @@ const server = http.createServer(async (req, res) => {
       `replayReady: ${latest.evidence.replayReady}`,
       `consistent: ${latest.evidence.consistent}`,
     ];
-    
+
     sendJson(res, 200, {
       drill: {
         id: latest.id,
@@ -6845,7 +6845,7 @@ const server = http.createServer(async (req, res) => {
     const format = (url.searchParams.get('format') || 'json').trim().toLowerCase();
     const gatesResult = buildReliabilityGates();
     const historyResult = getReliabilityHistory(parsePositiveInt(url.searchParams.get('historyLimit'), 10, 1, 100));
-    
+
     if (format === 'md' || format === 'markdown') {
       const lines = [];
       lines.push('# Open-Antigravity Reliability Report');
@@ -6891,12 +6891,12 @@ const server = http.createServer(async (req, res) => {
       sendText(res, 200, lines.join('\n'), 'text/markdown; charset=utf-8');
       return;
     }
-    
+
     if (format !== 'json') {
       sendJson(res, 400, { error: 'Field "format" must be one of: json, md.' });
       return;
     }
-    
+
     sendJson(res, 200, {
       generatedAt: new Date().toISOString(),
       gates: gatesResult,
