@@ -23,6 +23,7 @@
 **Open-Antigravity** is not just another code editor or AI assistant. It's an ambitious open-source project to build a web-native, **agent-first** integrated development environment (IDE). Unlike proprietary platforms that lock you into a single AI ecosystem, Open-Antigravity is designed from the ground up to be a **universal gateway to any LLM**. Our goal is to create a platform where developers can delegate complex tasks to autonomous AI agents, powered by the models of their choice.
 
 This project is for you if you believe in:
+
 - **True Model Freedom:** Building a future that isn't tied to a single AI provider.
 - **Democratizing AI:** Making state-of-the-art agentic development accessible to everyone.
 - **Transparency & Extensibility:** Creating an open core that the community can shape, extend, and trust.
@@ -33,12 +34,14 @@ This project is for you if you believe in:
 As of 2026-02-23, the active build scope is a **single-user developer experience**. The immediate goal is to make one developer highly productive and confident end-to-end before expanding to teams or commercial packaging.
 
 ### In Scope Right Now
+
 - One primary user per deployment (local machine or private VPS).
 - Single-user manager/editor workflow with verifiable artifacts.
 - Model routing across connected providers.
 - Stability, restore drills, and reproducible local runs.
 
 ### Deferred Until Single-User Flow Is Stable
+
 - Multi-user collaboration and shared workspaces.
 - Enterprise controls (RBAC, SSO, SOC2-oriented features).
 - Public marketplace/distribution and broader commercialization layers.
@@ -81,21 +84,21 @@ Open-Antigravity is being designed as a modular, container-native application th
 
 ```
 ┌──────────────────────────┐
-│      Web UI (React)      │
-│  (Editor & Manager View) │
+│      Web UI (Static)     │
+│  (Manager & Editor View) │
 └────────────┬─────────────┘
-             │ (WebSocket, REST API)
+             │ (Local Network)
+┌────────────▼─────────────┐   ┌──────────────────┐
+│    PM2 Process Manager   │   │ AI Model Gateway │
+│(Orchestrator | Browser)  │◀──▶ (Azure / OpenAI)   │
+└────────────┬─────────────┘   └──────────────────┘
+             │
+       (Local System)
+             │
 ┌────────────▼─────────────┐
-│    Gateway & Orchestrator│
-│ (FastAPI / Node.js)      │
-└──────┬─────────┬─────────┘
-       │         │
- (Orchestrates)  (Routes to)
-       │         │
-┌──────▼─────────▼─────────┐   ┌──────────────────┐
-│  Workspace Manager       │   │ AI Model Gateway │
-│ (Manages Docker contexts)│◀──▶ (Connects to LLMs) │
-└──────────────────────────┘   └──────────────────┘
+│    Workspace (D:/Dev)    │
+│ (Native File System)     │
+└──────────────────────────┘
 ```
 
 - **Web UI:** A responsive frontend providing the editor and agent management interfaces.
@@ -135,50 +138,60 @@ Current execution policy: complete single-user depth and reliability first, then
 ## 🛠️ Getting Started (Development)
 
 The repository now includes a runnable MVP skeleton composed of:
+
 - `services/orchestrator` (minimal API gateway + task/model/workspace stubs)
 - `services/web` (minimal manager/editor UI that calls the orchestrator)
 - `mitmserver` (request interception tool used independently)
 
 **Prerequisites:**
+
 - Docker and Docker Compose plugin (`docker compose`)
 - Node.js v20+ (only needed if you run services without Docker)
 
 **Installation:**
 
-1.  **Clone the repository:**
+1. **Clone the repository:**
+
     ```bash
     git clone https://github.com/ishandutta2007/open-antigravity.git
     cd open-antigravity
     ```
 
-2.  **Setup environment variables:**
+2. **Setup environment variables:**
+
     ```bash
     cp .env.example .env
     ```
+
     Optional: define explicit model routing in `.env` using `MODEL_CATALOG` (JSON array) and `MODEL_PROVIDER_OVERRIDES`.
     If you keep credentials in `D:\Dev\global.env`, sync supported keys into local and VPS env files:
+
     ```powershell
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync_env_from_global.ps1 -UseSudo
     ```
+
     Use `-SkipRemote` for local-only updates.
 
-3.  **Launch the MVP skeleton:**
+3. **Launch the MVP skeleton:**
+
     ```bash
     docker compose up --build
     ```
 
-4.  **Open the services:**
+4. **Open the services:**
     - Web UI: `http://localhost:3000`
     - Orchestrator API health: `http://localhost:4000/health`
     - Runtime diagnostics API: `http://localhost:4000/v1/diagnostics/runtime`
     - From Web UI proxy: `http://localhost:3000/api/v1/diagnostics/runtime`
 
    For local+VPS runtime checks (including host processes like Ollama), run:
+
    ```powershell
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\vps_connect.ps1 -Status
    ```
 
-5.  **Run MITM proxy separately (optional):**
+1. **Run MITM proxy separately (optional):**
+
     ```bash
     cd mitmserver
     npm ci
@@ -211,13 +224,9 @@ We believe this ambitious project can only be realized as a community. We welcom
 - **Look at the [open issues](https://github.com/ishandutta2007/open-antigravity/issues)** to find a task that interests you.
 - **Join our [Discord server](https://discord.com/invite/jc4xtF58Ve)** to chat with the team and other contributors.
 
-
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=ishandutta2007/open-antigravity&type=date&legend=top-left)](https://www.star-history.com/#ishandutta2007/open-antigravity&type=date&legend=top-left)
-
-
-
 
 ## 📜 Disclaimer
 
