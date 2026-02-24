@@ -8,6 +8,15 @@ const { randomUUID, createHash } = require('crypto');
 const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
 const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js');
 const { z } = require('zod');
+const { Pool } = require('pg');
+
+let pgPool = null;
+if (process.env.DATABASE_URL) {
+  pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
+  pgPool.on('error', (err) => {
+    console.error('Unexpected error on idle PostgreSQL client', err);
+  });
+}
 
 const host = process.env.HOST || '0.0.0.0';
 const port = parsePort(process.env.PORT || '4000');
@@ -654,28 +663,68 @@ function persistTasksSoon() {
 }
 
 function persistTasksNow() {
-  if (!taskStorePath) {
-    return;
+  if (taskStorePath) {
+    try {
+      const taskStoreDirectory = path.dirname(taskStorePath);
+      fs.mkdirSync(taskStoreDirectory, { recursive: true });
+      const payload = {
+        version: 5,
+        savedAt: new Date().toISOString(),
+        tasks,
+        runs: collaborativeRuns,
+        plugins,
+        edits,
+        restoreDrills: restoreDrillRuns,
+        replayConsistencyRuns,
+        recoverySmokeRuns,
+        reliabilityHistory,
+      };
+      writeFileAtomic(taskStorePath, JSON.stringify(payload, null, 2));
+    } catch (error) {
+      console.error(`Failed to persist tasks to ${taskStorePath}:`, error.message);
+    }
   }
 
+  // Dual-write to Postgres Ledger if available
+  if (pgPool) {
+    persistTasksToLedger().catch(err => console.error('Failed to dual-write to Postgres Ledger:', err));
+  }
+}
+
+async function persistTasksToLedger() {
+  const client = await pgPool.connect();
   try {
-    const taskStoreDirectory = path.dirname(taskStorePath);
-    fs.mkdirSync(taskStoreDirectory, { recursive: true });
-    const payload = {
-      version: 5,
-      savedAt: new Date().toISOString(),
-      tasks,
-      runs: collaborativeRuns,
-      plugins,
-      edits,
-      restoreDrills: restoreDrillRuns,
-      replayConsistencyRuns,
-      recoverySmokeRuns,
-      reliabilityHistory,
-    };
-    writeFileAtomic(taskStorePath, JSON.stringify(payload, null, 2));
-  } catch (error) {
-    console.error(`Failed to persist tasks to ${taskStorePath}:`, error.message);
+    await client.query('BEGIN');
+    for (const task of tasks) {
+      await client.query(`
+        INSERT INTO tasks (id, status, model_id, priority, prompt, parent_task_id, is_autonomous, working_directory, created_at, updated_at, result)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ON CONFLICT (id) DO UPDATE SET
+          status = EXCLUDED.status,
+          updated_at = EXCLUDED.updated_at,
+          result = EXCLUDED.result
+      `, [
+        task.id, task.status, task.modelId, task.priority, task.prompt,
+        task.parentTaskId, task.isAutonomous, task.workingDirectory,
+        task.createdAt, task.updatedAt, task.result
+      ]);
+
+      for (const artifact of task.artifacts) {
+        await client.query(`
+          INSERT INTO task_artifacts (id, task_id, type, title, content)
+          VALUES ($1, $2, $3, $4, $5)
+          ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content
+         `, [
+          artifact.id || randomUUID(), task.id, artifact.type, artifact.title, artifact.content
+        ]);
+      }
+    }
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
 }
 

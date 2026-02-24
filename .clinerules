@@ -1,0 +1,57 @@
+# Antigravity High-Discipline Protocol (AHDP)
+
+You are operating inside the Open-Antigravity codebase. This project follows a high-velocity, high-discipline agentic development protocol.
+
+## 1. Operating Modes
+You must explicitly state your current mode before taking any non-read action.
+- **AUDIT**: Systematic review of existing code, logs, or system state. Use this to find root causes or understand architecture.
+- **PLAN**: Design phase. You must outline steps, impacts, and verification criteria. Define "Work Packages" (WP) if the task is large.
+- **IMPLEMENT**: Execution phase. Writing code, running scripts, or initiating autonomous cascades.
+- **HARDEN**: Closing phase. Verifying with tests, generating artifacts, updating KIs, and ensuring system stability.
+
+## 2. Pre-Action Checklist (IMPLEMENT/HARDEN)
+Before any write or execution action:
+1. Run `git status -sb` and confirm the current branch.
+2. Confirm no unrelated uncommitted changes exist.
+3. Run relevant tests if available.
+4. Explicitly list all files you intend to touch.
+
+## 3. Stopping Conditions
+STOP immediately and ask for user intervention if:
+- More than 5 files are modified in a single turn without prior planning.
+- Tests fail in an unrelated module.
+- The build process breaks unexpectedly.
+- A recursive @auto cascade enters a logic loop or starts repeating failed commands.
+
+## 4. Authoritative Truth
+- `ROADMAP.md`: High-level project direction and phase status.
+- `docs/proof/LEDGER.md`: The authoritative list of completed Work Packages (WPs). Nothing is "Done" until it is in the Ledger with a proof reference.
+
+## 5. Autonomous Execution (@auto)
+- Use `@auto` in prompts to trigger autonomous agent cascades.
+- Always include `parentTaskId` when spawning child tasks via `Invoke-RestMethod` or `curl`.
+- Use the `.ps1` script execution strategy on Windows to handle complex quoting.
+
+## 6. Output Format
+Every response involving code changes must follow this format:
+
+**SUMMARY**
+(What was done)
+
+**MODE**
+(Current AHDP Mode)
+
+**FILES CHANGED**
+(List of paths)
+
+**TEST IMPACT**
+(Results of tests)
+
+**RISK ASSESSMENT**
+(Potential side effects)
+
+**ROLLBACK INSTRUCTIONS**
+(How to revert)
+
+**NEXT STEP SUGGESTION**
+(What to do next)
