@@ -1,0 +1,14 @@
+{
+    "title": "AEI System Overview and Pipeline",
+    "summary": "This knowledge item explains the AEI codebase, specifically relating to its VPS deployment topology, remote orchestration structure via PM2 and Docker Compose, PostgreSQL ledger schema, Workspace boundaries, and MCP Integration for AI agents.",
+    "createdAt": "2026-02-24T22:45:00Z",
+    "originalSources": [
+        "docs/DEVELOPMENT_CONTINUATION_GUIDE.md",
+        "docs/AI_TOOLING_AND_MCP.md",
+        "docker-compose.yml"
+    ],
+    "artifacts": [
+        "artifacts/architecture.md",
+        "artifacts/mcp_integration.md"
+    ]
+}
