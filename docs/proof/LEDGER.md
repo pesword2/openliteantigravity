@@ -119,3 +119,8 @@ ead_ledger\) on the orchestrator via SSE.
 - **Description**: Authored \docs/AI_TOOLING_AND_MCP.md\ explaining the architecture of SSE streams and payload construction for client integrations connecting to the new Neural OS endpoints on Port 4000.
 - **Verification**: Markdown file created properly and tracked into Git history.
 - **Date**: 2026-02-24
+
+### WP 4.7 - Browser Automation Docker Integration
+- **Description**: Upgraded the standalone browser proxy service (\services/browser\) to a fully managed Docker container running Node 22 on Debian Bookworm with native Playwright dependencies integrated directly into \docker-compose.yml\.
+- **Verification**: Evaluated \http://localhost:14200/health\ inside the VPS; service deployed and port successfully hooked.
+- **Date**: 2026-02-24
