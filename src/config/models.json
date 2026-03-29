@@ -1,0 +1,146 @@
+{
+  "providers": {
+    "ollama": {
+      "name": "Ollama",
+      "baseUrl": "http://localhost:11434",
+      "apiKeyEnvVar": null,
+      "models": [
+        {
+          "id": "ollama/llama3",
+          "provider": "ollama",
+          "name": "Llama 3",
+          "contextWindow": 8192,
+          "isLocal": true,
+          "supportsStreaming": true
+        },
+        {
+          "id": "ollama/mistral",
+          "provider": "ollama",
+          "name": "Mistral",
+          "contextWindow": 8192,
+          "isLocal": true,
+          "supportsStreaming": true
+        },
+        {
+          "id": "ollama/phi3",
+          "provider": "ollama",
+          "name": "Phi-3",
+          "contextWindow": 128000,
+          "isLocal": true,
+          "supportsStreaming": true
+        },
+        {
+          "id": "ollama/codellama",
+          "provider": "ollama",
+          "name": "Code Llama",
+          "contextWindow": 16384,
+          "isLocal": true,
+          "supportsStreaming": true
+        }
+      ]
+    },
+    "openai": {
+      "name": "OpenAI",
+      "baseUrl": "https://api.openai.com/v1",
+      "apiKeyEnvVar": "OPENAI_API_KEY",
+      "models": [
+        {
+          "id": "openai/gpt-4o",
+          "provider": "openai",
+          "name": "GPT-4o",
+          "contextWindow": 128000,
+          "inputCostPer1k": 0.005,
+          "outputCostPer1k": 0.015,
+          "isLocal": false,
+          "supportsStreaming": true
+        },
+        {
+          "id": "openai/gpt-4-turbo",
+          "provider": "openai",
+          "name": "GPT-4 Turbo",
+          "contextWindow": 128000,
+          "inputCostPer1k": 0.01,
+          "outputCostPer1k": 0.03,
+          "isLocal": false,
+          "supportsStreaming": true
+        },
+        {
+          "id": "openai/gpt-3.5-turbo",
+          "provider": "openai",
+          "name": "GPT-3.5 Turbo",
+          "contextWindow": 16385,
+          "inputCostPer1k": 0.0005,
+          "outputCostPer1k": 0.0015,
+          "isLocal": false,
+          "supportsStreaming": true
+        }
+      ]
+    },
+    "anthropic": {
+      "name": "Anthropic",
+      "baseUrl": "https://api.anthropic.com/v1",
+      "apiKeyEnvVar": "ANTHROPIC_API_KEY",
+      "models": [
+        {
+          "id": "anthropic/claude-3-opus",
+          "provider": "anthropic",
+          "name": "Claude 3 Opus",
+          "contextWindow": 200000,
+          "inputCostPer1k": 0.015,
+          "outputCostPer1k": 0.075,
+          "isLocal": false,
+          "supportsStreaming": true
+        },
+        {
+          "id": "anthropic/claude-3-sonnet",
+          "provider": "anthropic",
+          "name": "Claude 3 Sonnet",
+          "contextWindow": 200000,
+          "inputCostPer1k": 0.003,
+          "outputCostPer1k": 0.015,
+          "isLocal": false,
+          "supportsStreaming": true
+        },
+        {
+          "id": "anthropic/claude-3-haiku",
+          "provider": "anthropic",
+          "name": "Claude 3 Haiku",
+          "contextWindow": 200000,
+          "inputCostPer1k": 0.00025,
+          "outputCostPer1k": 0.00125,
+          "isLocal": false,
+          "supportsStreaming": true
+        }
+      ]
+    },
+    "google": {
+      "name": "Google",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+      "apiKeyEnvVar": "GOOGLE_API_KEY",
+      "models": [
+        {
+          "id": "google/gemini-pro",
+          "provider": "google",
+          "name": "Gemini Pro",
+          "contextWindow": 32768,
+          "inputCostPer1k": 0.00025,
+          "outputCostPer1k": 0.0005,
+          "isLocal": false,
+          "supportsStreaming": true
+        },
+        {
+          "id": "google/gemini-ultra",
+          "provider": "google",
+          "name": "Gemini Ultra",
+          "contextWindow": 1000000,
+          "inputCostPer1k": 0.0075,
+          "outputCostPer1k": 0.015,
+          "isLocal": false,
+          "supportsStreaming": true
+        }
+      ]
+    }
+  },
+  "defaultProvider": "ollama",
+  "fallbackChain": ["ollama", "openai", "anthropic"]
+}
