@@ -1,6 +1,5 @@
 ```
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Logs and temp files
+*.log
+logs/
 ```
