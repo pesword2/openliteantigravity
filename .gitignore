@@ -1,6 +1,1 @@
-```
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-```
+Nothing needs to be added to .gitignore since only a source file (`main.py`) was added without any build artifacts, dependencies, or temporary files.
