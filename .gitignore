@@ -1,4 +1,5 @@
 ```
 # Logs and temp files
 *.log
+logs/
 ```

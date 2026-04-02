@@ -11,3 +11,5 @@ INFO:OpenLiteAntigravity:✅ Web Navigator hazır.
 ERROR:OpenLiteAntigravity:❌ Ajan Orkestratörü başlatılamadı: No module named 'autogen_ext'
 INFO:     Application startup complete.
 INFO:     127.0.0.1:47176 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47190 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47192 - "GET /health HTTP/1.1" 200 OK
