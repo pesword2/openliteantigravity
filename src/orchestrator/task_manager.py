@@ -115,8 +115,19 @@ class TaskManager:
     def _create_model_client(self) -> ChatCompletionClient:
         """Model client oluştur (provider'a göre)"""
         from autogen_ext.models.openai import OpenAIChatCompletionClient
+        from autogen_core.models import ModelInfo
         
         config = get_default_agent_config(self.model_provider, self.model_name)
+        
+        # Ollama ve özel modeller için model_info gerekli
+        ollama_model_info = ModelInfo(
+            vision=False,
+            function_calling=True,
+            json_output=True,
+            family='unknown',
+            context_window=8192,
+            structured_output=False
+        )
         
         if self.model_provider == "ollama":
             # Ollama için OpenAI uyumlu client
@@ -125,7 +136,8 @@ class TaskManager:
                 base_url=config["base_url"],
                 api_key=config["api_key"],
                 temperature=config["temperature"],
-                max_tokens=config["max_tokens"]
+                max_tokens=config["max_tokens"],
+                model_info=ollama_model_info
             )
         elif self.model_provider == "openai":
             return OpenAIChatCompletionClient(
