@@ -1,1 +1,12 @@
-python: can't open file '/workspace/main.py': [Errno 2] No such file or directory
+INFO:     Will watch for changes in these directories: ['/workspace']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [4500] using StatReload
+INFO:     Started server process [4509]
+INFO:     Waiting for application startup.
+INFO:OpenLiteAntigravity:🚀 OpenLiteAntigravity başlatılıyor...
+WARNING:OpenLiteAntigravity:⚠️ Docker Sandbox başlatılamadı: Error while fetching server API version: ('Connection aborted.', FileNotFoundError(2, 'No such file or directory')). Kod yürütme devre dışı kalacak.
+INFO:src.git_manager.git_operations:GitOperations initialized with workspace: /workspace/workspace
+INFO:OpenLiteAntigravity:✅ Git Manager hazır.
+INFO:OpenLiteAntigravity:✅ Web Navigator hazır.
+ERROR:OpenLiteAntigravity:❌ Ajan Orkestratörü başlatılamadı: No module named 'autogen_ext'
+INFO:     Application startup complete.
